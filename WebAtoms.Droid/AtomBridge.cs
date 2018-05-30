@@ -156,7 +156,12 @@ namespace WebAtoms
         public string ResolveName(string item) {
             if (item.StartsWith("."))
             {
-                return System.IO.Path.Combine(BaseUrl, item);
+                var currentUrl = new Uri(BaseUrl);
+                var relUrl = new Uri(item, UriKind.Relative);
+                var absUrl = new Uri(currentUrl, relUrl);
+                var s = absUrl.ToString() + ".js";
+                Log($"Resolve(\"{BaseUrl}\",\"{item}\") = \"{s}\"");
+                return s;
             }
 
             var tokens = item.Split('/');
@@ -166,7 +171,7 @@ namespace WebAtoms
 
             var url = this.ModuleUrls[packageName];
 
-            return url + path;
+            return url + path + ".js";
         }
 
         public async Task ExecuteScriptAsync(string item) {
@@ -178,14 +183,22 @@ namespace WebAtoms
 
                     Log($"Downloading {item}");
                     var script = await client.GetStringAsync(item);
-
-                    engine.Execute(script);
+                    Log($"Executing {item}");
+                    BaseUrl = item;
+                    engine.Execute(script, new Jint.Parser.ParserOptions {
+                        Source = item
+                    });
                 }
                 catch (Exception ex) {
+                    Log($"Failed: {item}");
                     Log(ex);
                     throw;
                 }
             }
+        }
+
+        public void AppLoaded(JsValue exports) {
+            Log("App loaded");
         }
 
         public void ExecuteScript(string item, JsValue callback) {
@@ -233,7 +246,9 @@ namespace WebAtoms
             return properties.GetOrCreate(key, k => type.GetProperties().First(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
         }
 
-
+        public static bool IsEmpty(this string text) {
+            return string.IsNullOrWhiteSpace(text);
+        }
     }
 
     public class AtomDisposable : IDisposable
