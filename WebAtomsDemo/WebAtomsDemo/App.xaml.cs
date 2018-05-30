@@ -1,4 +1,5 @@
 using System;
+using WebAtoms;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -11,7 +12,17 @@ namespace WebAtomsDemo
 		{
 			InitializeComponent();
 
-			MainPage = new MainPage();
+            // MainPage = new MainPage();
+
+            MainPage = new ContentPage {
+                Content = new Label {
+                    Text = "Loading..."
+                }
+            };
+
+            AtomBridge.engine.Global.Put("App", Jint.Native.JsValue.FromObject(AtomBridge.engine, WAContext.Current), true);
+
+            // start point to download all modules and run it finally...
 		}
 
 		protected override void OnStart ()

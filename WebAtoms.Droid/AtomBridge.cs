@@ -1,8 +1,10 @@
 ﻿using Jint;
+using Jint.Native;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 using Xamarin.Forms;
@@ -26,7 +28,7 @@ namespace WebAtoms
             return Activator.CreateInstance(type) as View;
         }
 
-        public void AttachControl(View element, Jint.Native.JsValue control) {
+        public void AttachControl(View element, JsValue control) {
             var ac = WAContext.GetAtomControl(element);
             if(ac != null)
             {
@@ -35,7 +37,7 @@ namespace WebAtoms
             WAContext.SetAtomControl(element, control);
         }
 
-        public IDisposable AddEventHandler(View element, string name, Jint.Native.JsValue callback, bool? capture)
+        public IDisposable AddEventHandler(View element, string name, JsValue callback, bool? capture)
         {
             PropertyChangedEventHandler handler = (s, e) => {
                 if (e.PropertyName == name)
@@ -50,7 +52,7 @@ namespace WebAtoms
             });
         }
 
-        public object AtomParent(Element element, Jint.Native.JsValue climbUp)
+        public object AtomParent(Element element, JsValue climbUp)
         {
             bool cu = !climbUp.IsUndefined() && !climbUp.IsNull() && climbUp.AsBoolean();
             do {
@@ -76,13 +78,13 @@ namespace WebAtoms
             return null;
         }
 
-        public void VisitDescendents(Element element, Jint.Native.JsValue action)
+        public void VisitDescendents(Element element, JsValue action)
         {
             foreach (var e in (element as IElementController).LogicalChildren) {
                 var ac = WAContext.GetAtomControl(e);
                 var r = action.Invoke(
-                    Jint.Native.JsValue.FromObject(engine,e), 
-                    (Jint.Native.JsValue)ac);
+                    JsValue.FromObject(engine,e), 
+                    (JsValue)ac);
                 if (r.IsUndefined() || r.IsNull() || !r.AsBoolean())
                     continue;
                 VisitDescendents(e, action);
@@ -106,6 +108,68 @@ namespace WebAtoms
             }
         }
 
+        public JsValue GetValue(Element view, string name) {
+            return null;
+        }
+
+        public void SetValue(Element view, string name, JsValue value) {
+
+            bool isNull = value.IsNull() || value.IsUndefined();
+
+            var pv = view.GetProperty(name);
+
+            if (isNull) {
+                pv.SetValue(view, null);
+                return;
+            }
+
+            var pt = pv.PropertyType;
+
+            if (pt == typeof(string)) {
+                pv.SetValue(view, value.AsString());
+                return;
+            }
+
+            pt = Nullable.GetUnderlyingType(pt) ?? pt;
+
+            if (value.IsDate()) {
+                // conver to datetime and set...
+                pv.SetValue(view, value.AsDate().ToDateTime());
+                return;
+            }
+
+            if (pt.IsValueType) {
+                // convert...
+                var v = Convert.ChangeType(value.ToObject(), pt);
+                pv.SetValue(view, v);
+            }
+        }
+
+
+
+    }
+
+    public static class DictionaryExtensions {
+
+        static Dictionary<string, PropertyInfo> properties = new Dictionary<string, PropertyInfo>();
+
+        public static TValue GetOrCreate<TKey, TValue>(
+            this Dictionary<TKey,TValue> d,
+            TKey key,
+            Func<TKey, TValue> factory) {
+            if (d.TryGetValue(key, out TValue value))
+                return value;
+            TValue v = factory(key);
+            d[key] = v;
+            return v;
+        }
+
+        public static PropertyInfo GetProperty(this object value, string name) {
+            Type type = value.GetType();
+            string key = $"{type.FullName}.{name}";
+
+            return properties.GetOrCreate(key, k => type.GetProperties().First(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
+        }
 
 
     }

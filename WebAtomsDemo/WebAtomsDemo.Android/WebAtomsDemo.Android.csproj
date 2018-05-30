@@ -15,8 +15,8 @@
     <AndroidManifest>Properties\AndroidManifest.xml</AndroidManifest>
     <MonoAndroidResourcePrefix>Resources</MonoAndroidResourcePrefix>
     <MonoAndroidAssetsPrefix>Assets</MonoAndroidAssetsPrefix>
-    <AndroidUseLatestPlatformSdk>false</AndroidUseLatestPlatformSdk>
-    <TargetFrameworkVersion>v7.1</TargetFrameworkVersion>
+    <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
+    <TargetFrameworkVersion>v8.1</TargetFrameworkVersion>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>
@@ -95,10 +95,7 @@
       <Project>{cc9c8d18-6df2-46c7-ae8b-6386e692347f}</Project>
       <Name>WebAtoms.Droid</Name>
     </ProjectReference>
-    <ProjectReference Include="..\WebAtomsDemo\WebAtomsDemo.csproj">
-      <Project>{53573866-C931-4453-9B96-6E3B59E35E77}</Project>
-      <Name>WebAtomsDemo</Name>
-    </ProjectReference>
   </ItemGroup>
+  <Import Project="..\WebAtomsDemo\WebAtomsDemo.projitems" Label="Shared" />
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />
 </Project>

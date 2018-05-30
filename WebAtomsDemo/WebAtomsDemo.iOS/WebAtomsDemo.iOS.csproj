@@ -150,10 +150,4 @@
     <PackageReference Include="Xamarin.Forms" Version="3.0.0.482510" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
-  <ItemGroup>
-    <ProjectReference Include="..\WebAtomsDemo\WebAtomsDemo.csproj">
-      <Project>{53573866-C931-4453-9B96-6E3B59E35E77}</Project>
-      <Name>WebAtomsDemo</Name>
-    </ProjectReference>
-  </ItemGroup>
 </Project>
