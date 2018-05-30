@@ -173,10 +173,18 @@ namespace WebAtoms
             using (var client = new HttpClient())
             {
 
-                Log($"Downloading {item}");
-                var script = await client.GetStringAsync(item);
+                try
+                {
 
-                engine.Execute(script);
+                    Log($"Downloading {item}");
+                    var script = await client.GetStringAsync(item);
+
+                    engine.Execute(script);
+                }
+                catch (Exception ex) {
+                    Log(ex);
+                    throw;
+                }
             }
         }
 
