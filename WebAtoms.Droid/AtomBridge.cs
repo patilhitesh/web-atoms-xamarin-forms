@@ -4,9 +4,10 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
-
+using System.Threading.Tasks;
 using Xamarin.Forms;
 
 namespace WebAtoms
@@ -14,7 +15,14 @@ namespace WebAtoms
     public class AtomBridge
     {
 
-        public static Engine engine = new Engine();
+        public Dictionary<string, string> ModuleUrls = new Dictionary<string, string>();
+
+        public static AtomBridge Instance = new AtomBridge();
+
+        public string BaseUrl = "";
+
+
+        public Engine engine = new Engine();
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
@@ -143,6 +151,52 @@ namespace WebAtoms
                 var v = Convert.ChangeType(value.ToObject(), pt);
                 pv.SetValue(view, v);
             }
+        }
+
+        public string ResolveName(string item) {
+            if (item.StartsWith("."))
+            {
+                return System.IO.Path.Combine(BaseUrl, item);
+            }
+
+            var tokens = item.Split('/');
+
+            var packageName = tokens.First();
+            var path = string.Join("/", tokens.Skip(1));
+
+            var url = this.ModuleUrls[packageName];
+
+            return url + path;
+        }
+
+        public async Task ExecuteScriptAsync(string item) {
+            using (var client = new HttpClient())
+            {
+
+                Log($"Downloading {item}");
+                var script = await client.GetStringAsync(item);
+
+                engine.Execute(script);
+            }
+        }
+
+        public void ExecuteScript(string item, JsValue callback) {
+            Device.BeginInvokeOnMainThread(async () => {
+
+                await ExecuteScriptAsync(item);
+
+                if (callback != null) {
+                    callback.Invoke();
+                }
+                
+            });
+        }
+
+
+        public Action<object> OnLog = l => { System.Diagnostics.Debug.WriteLine(l); };
+
+        public void Log(object a) {
+            OnLog(a);
         }
 
 
