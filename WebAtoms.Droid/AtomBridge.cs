@@ -88,19 +88,56 @@ namespace WebAtoms
             WAContext.SetAtomControl(element, control);
         }
 
+        public class AtomDelegate {
+
+            public JsValue callback;
+
+            public void OnEvent(Object sender, Object arg) {
+                callback.Invoke(JsValue.FromObject(AtomBridge.Instance.engine, arg));
+            }
+
+            public static MethodInfo OnEventMethod = typeof(AtomDelegate).GetMethod("OnEvent");
+
+        }
+
         public IDisposable AddEventHandler(Element element, string name, JsValue callback, bool? capture)
         {
-            PropertyChangedEventHandler handler = (s, e) => {
-                if (e.PropertyName == name)
-                {
-                    callback.Invoke(e.PropertyName);
-                }
-            };
+            var e = element.GetType().GetEvent(name);
 
-            element.PropertyChanged += handler;
+            var pe = new AtomDelegate() { callback = callback };
+
+            var handler = Delegate.CreateDelegate(e.EventHandlerType, pe, AtomDelegate.OnEventMethod);
+
+            e.AddEventHandler(element, handler);
+
             return new AtomDisposable(() => {
-                element.PropertyChanged -= handler;
+                e.RemoveEventHandler(element, handler);
+                pe.callback = null;
             });
+        }
+        public IDisposable WatchProperty(object obj, string name, JsValue callback)
+        {
+            if (obj is INotifyPropertyChanged element)
+            {
+
+                var pinfo = obj.GetProperty(name);
+
+                PropertyChangedEventHandler handler = (s, e) =>
+                {
+                    if (e.PropertyName == name)
+                    {
+                        callback.Invoke( JsValue.FromObject(engine, pinfo.GetValue(obj)));
+                    }
+                };
+
+                element.PropertyChanged += handler;
+                return new AtomDisposable(() =>
+                {
+                    element.PropertyChanged -= handler;
+                });
+            }
+
+            return EmptyDisposable.instance;
         }
 
         public object AtomParent(Element element, JsValue climbUp)
@@ -164,8 +201,10 @@ namespace WebAtoms
             }
         }
 
-        public JsValue GetValue(Element view, string name) {
-            return null;
+        public object GetValue(Element view, string name) {
+            var pv = view.GetProperty(name);
+            var value = pv.GetValue(view);
+            return value;
         }
 
         public void SetValue(Element view, string name, JsValue value) {
@@ -194,10 +233,15 @@ namespace WebAtoms
                 return;
             }
 
-            if (pt.IsValueType) {
+            if (pt.IsValueType)
+            {
                 // convert...
                 var v = Convert.ChangeType(value.ToObject(), pt);
                 pv.SetValue(view, v);
+                return;
+            }
+            else {
+                pv.SetValue(view, value.ToObject());
             }
         }
 
@@ -341,6 +385,16 @@ namespace WebAtoms
         public void Dispose()
         {
             action?.Invoke();
+        }
+    }
+
+    public class EmptyDisposable : IDisposable
+    {
+        public static EmptyDisposable instance = new EmptyDisposable();
+
+        public void Dispose()
+        {
+            throw new NotImplementedException();
         }
     }
 
