@@ -15,6 +15,46 @@ namespace WebAtoms
     public class AtomBridge
     {
 
+        public AtomBridge()
+        {
+            engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
+            engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
+
+            engine.Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i); };");
+            engine.Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
+        }
+
+        private Dictionary<int,System.Threading.CancellationTokenSource> intervalCancells = new Dictionary<int, System.Threading.CancellationTokenSource>();
+        private int intervalId = 1;
+
+        public void ClearInterval(int id) {
+            if (intervalCancells.Remove(id, out var cancel)) {
+                cancel.Cancel();
+            }
+        }
+
+        public int SetInterval(JsValue value, int milliSeconds) {
+
+            System.Threading.CancellationTokenSource cancellation = new System.Threading.CancellationTokenSource();
+
+            Device.BeginInvokeOnMainThread(async () => {
+                while (!cancellation.IsCancellationRequested)
+                {
+                    try
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(milliSeconds), cancellation.Token);
+                        value.Invoke();
+                    }
+                    catch (TaskCanceledException) { }
+                }
+            });
+
+            lock (intervalCancells) {
+                intervalCancells.Add(intervalId, cancellation);
+                return intervalId++;
+            }
+        }
+
         public Dictionary<string, string> ModuleUrls = new Dictionary<string, string>();
 
         public static AtomBridge Instance = new AtomBridge();
@@ -22,21 +62,24 @@ namespace WebAtoms
         public string BaseUrl = "";
 
 
-        public Engine engine = new Engine();
+        public Engine engine = new Engine(a => {
+            a.CatchClrExceptions(f => true);
+        });
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
-        public View Create(string name)
+        public Element Create(string name)
         {
 
             types = types ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.DefinedTypes).ToList();
 
             var type = types.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
-            return Activator.CreateInstance(type) as View;
+            Element view = Activator.CreateInstance(type) as Element;
+            return view;
         }
 
-        public void AttachControl(View element, JsValue control) {
+        public void AttachControl(Element element, JsValue control) {
             var ac = WAContext.GetAtomControl(element);
             if(ac != null)
             {
@@ -45,7 +88,7 @@ namespace WebAtoms
             WAContext.SetAtomControl(element, control);
         }
 
-        public IDisposable AddEventHandler(View element, string name, JsValue callback, bool? capture)
+        public IDisposable AddEventHandler(Element element, string name, JsValue callback, bool? capture)
         {
             PropertyChangedEventHandler handler = (s, e) => {
                 if (e.PropertyName == name)
@@ -113,6 +156,11 @@ namespace WebAtoms
                 case Layout<View> grid:
                     grid.Children.Add(child as View);
                     break;
+                case ContentPage page:
+                    page.Content = child as View;
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
         }
 
@@ -153,14 +201,14 @@ namespace WebAtoms
             }
         }
 
-        public string ResolveName(string item) {
+        public string ResolveName(string baseUrl, string item) {
             if (item.StartsWith("."))
             {
-                var currentUrl = new Uri(BaseUrl);
+                var currentUrl = new Uri(baseUrl);
                 var relUrl = new Uri(item, UriKind.Relative);
                 var absUrl = new Uri(currentUrl, relUrl);
                 var s = absUrl.ToString() + ".js";
-                Log($"Resolve(\"{BaseUrl}\",\"{item}\") = \"{s}\"");
+                Log($"Resolve(\"{baseUrl}\",\"{item}\") = \"{s}\"");
                 return s;
             }
 
@@ -197,8 +245,31 @@ namespace WebAtoms
             }
         }
 
-        public void AppLoaded(JsValue exports) {
-            Log("App loaded");
+        public void AppLoaded(JsValue require, JsValue exports) {
+
+            try
+            {
+                //Jint.Native.Object.ObjectConstructor oc = exports.AsObject().GetProperty("App").Value.AsObject() as Jint.Native.Object.ObjectConstructor;
+                //var appObject = oc.Construct(new JsValue[] { });
+
+                //appObject.GetProperty("main").Value.Invoke();
+
+                engine.Global.Put("_require", require, true);
+                engine.Global.Put("_exports", exports, true);
+
+                engine.Execute($"var appBridge = _require('web-atoms-core/bin/core/bridge');");
+                engine.Execute($"appBridge.AtomBridge.instance = bridge;");
+
+                engine.Execute($"var app = new _exports.App();" +
+                    $"app.main();");
+
+
+                Log("App loaded");
+            }
+            catch (Exception ex) {
+                Log(ex);
+
+            }
         }
 
         public void ExecuteScript(string item, JsValue callback) {
@@ -206,8 +277,15 @@ namespace WebAtoms
 
                 await ExecuteScriptAsync(item);
 
-                if (callback != null) {
-                    callback.Invoke();
+                try
+                {
+                    if (callback != null)
+                    {
+                        callback.Invoke();
+                    }
+                }
+                catch (Exception ex) {
+                    Log(ex);
                 }
                 
             });

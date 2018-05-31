@@ -22,15 +22,18 @@ namespace WebAtomsDemo
 
             var engine = AtomBridge.Instance.engine;
 
-            engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
-            engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, AtomBridge.Instance), true);
 
-            AtomBridge.Instance.BaseUrl = "https://cdn.jsdelivr.net/npm/web-atoms-xamarin-forms-sample@1.0.5/bin/app.js";
-            AtomBridge.Instance.ModuleUrls["web-atoms-core"] = "https://cdn.jsdelivr.net/npm/web-atoms-core@1.0.26/";
+            // var webAtomsCore = "http://192.168.0.31:8080/";
+            var webAtomsCore = "https://cdn.jsdelivr.net/npm/web-atoms-core@1.0.36/";
+
+            AtomBridge.Instance.ModuleUrls["web-atoms-core"] = webAtomsCore;
+
+            // var start = "http://192.168.0.31:8081/";
+            var start = "https://cdn.jsdelivr.net/npm/web-atoms-xamarin-forms-sample@1.0.7";
 
             Device.BeginInvokeOnMainThread(async () => { 
-                await AtomBridge.Instance.ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/web-atoms-core@1.0.26/define.js");
-                await AtomBridge.Instance.ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/web-atoms-xamarin-forms-sample@1.0.5/bin/app.js");
+                await AtomBridge.Instance.ExecuteScriptAsync($"{webAtomsCore}define.js");
+                await AtomBridge.Instance.ExecuteScriptAsync($"{start}/bin/app.js");
             });
 
 
