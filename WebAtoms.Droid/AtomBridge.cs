@@ -1,5 +1,7 @@
 ﻿using Jint;
 using Jint.Native;
+using Jint.Native.Object;
+using Jint.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,6 +11,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Forms;
+using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
@@ -22,6 +25,44 @@ namespace WebAtoms
 
             engine.Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i); };");
             engine.Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
+        }
+
+        public void LoadContent(Element element, string content) {
+            (element as Page).LoadFromXaml(content);
+        }
+
+        //public class ObjectReferenceWrapper : JsValue, IObjectWrapper
+        //{
+        //    public ObjectReferenceWrapper(bool value) : base(value)
+        //    {
+
+        //    }
+
+        //    public ObjectReferenceWrapper(double value) : base(value)
+        //    {
+
+        //    }
+
+        //    public ObjectReferenceWrapper(string value) : base(value)
+        //    {
+
+        //    }
+
+        //    public ObjectReferenceWrapper(ObjectInstance value) : base(value)
+        //    {
+
+        //    }
+
+        //    public object Target { get; set; }
+
+            
+        //}
+
+        public JsValue FindChild(Element root, string name)
+        {
+            var item = root.FindByName<Element>(name);
+            var v = new ObjectWrapper(engine, item);
+            return v;
         }
 
         private Dictionary<int,System.Threading.CancellationTokenSource> intervalCancells = new Dictionary<int, System.Threading.CancellationTokenSource>();
@@ -83,6 +124,8 @@ namespace WebAtoms
             var ac = WAContext.GetAtomControl(element);
             if(ac != null)
             {
+                if (ac == control as object)
+                    return;
                 throw new InvalidOperationException("Control already attached");
             }
             WAContext.SetAtomControl(element, control);
@@ -205,6 +248,7 @@ namespace WebAtoms
             var pv = view.GetProperty(name);
             var value = pv.GetValue(view);
             return value;
+            // return null;
         }
 
         public void SetValue(Element view, string name, JsValue value) {
@@ -220,6 +264,13 @@ namespace WebAtoms
 
             var pt = pv.PropertyType;
 
+
+
+            if (pt == typeof(string)) {
+                pv.SetValue(view, value.AsString());
+                return;
+            }
+
             // check if it is an array
             if (value.IsArray()) {
                 var old = pv.GetValue(view);
@@ -227,11 +278,6 @@ namespace WebAtoms
                     d.Dispose();
                 }
                 pv.SetValue(view, new AtomEnumerable(value.AsArray()));
-                return;
-            }
-
-            if (pt == typeof(string)) {
-                pv.SetValue(view, value.AsString());
                 return;
             }
 

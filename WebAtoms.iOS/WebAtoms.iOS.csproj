@@ -12,7 +12,7 @@
     <OutputType>Library</OutputType>
     <RootNamespace>WebAtoms</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    <AssemblyName>WebAtoms.iOS</AssemblyName>
+    <AssemblyName>WebAtoms</AssemblyName>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
   </PropertyGroup>

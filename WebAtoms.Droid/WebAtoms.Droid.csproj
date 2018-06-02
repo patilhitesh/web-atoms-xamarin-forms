@@ -11,7 +11,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>WebAtoms</RootNamespace>
-    <AssemblyName>WebAtoms.Droid</AssemblyName>
+    <AssemblyName>WebAtoms</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <AndroidResgenFile>Resources\Resource.Designer.cs</AndroidResgenFile>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
@@ -46,7 +46,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AtomArray.cs" />
     <Compile Include="AtomArray1.cs" />
     <Compile Include="AtomBridge.cs" />
     <Compile Include="AtomEnumerable.cs" />
