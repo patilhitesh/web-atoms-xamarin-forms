@@ -46,7 +46,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AtomArray.cs" />
+    <Compile Include="AtomArray1.cs" />
     <Compile Include="AtomBridge.cs" />
+    <Compile Include="AtomEnumerable.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

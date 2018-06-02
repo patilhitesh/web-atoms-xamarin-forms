@@ -220,6 +220,16 @@ namespace WebAtoms
 
             var pt = pv.PropertyType;
 
+            // check if it is an array
+            if (value.IsArray()) {
+                var old = pv.GetValue(view);
+                if (old is IDisposable d) {
+                    d.Dispose();
+                }
+                pv.SetValue(view, new AtomEnumerable(value.AsArray()));
+                return;
+            }
+
             if (pt == typeof(string)) {
                 pv.SetValue(view, value.AsString());
                 return;
