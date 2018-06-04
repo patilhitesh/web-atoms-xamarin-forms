@@ -23,12 +23,12 @@ namespace WebAtomsDemo
             var engine = AtomBridge.Instance.engine;
 
 
-            var webAtomsCore = "http://192.168.0.105:8081/";
+            var webAtomsCore = "http://192.168.0.104:8081/";
             // var webAtomsCore = "https://cdn.jsdelivr.net/npm/web-atoms-core@1.0.41/";
 
             AtomBridge.Instance.ModuleUrls["web-atoms-core"] = webAtomsCore;
 
-            var start = "http://192.168.0.105:8080/";
+            var start = "http://192.168.0.104:8080/";
             // var start = "https://cdn.jsdelivr.net/npm/web-atoms-xamarin-forms-sample@1.0.12";
 
             Device.BeginInvokeOnMainThread(async () => { 

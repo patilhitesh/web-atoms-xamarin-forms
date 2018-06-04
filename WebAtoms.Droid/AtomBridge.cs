@@ -1,6 +1,8 @@
 ﻿using Jint;
 using Jint.Native;
 using Jint.Native.Object;
+using Jint.Runtime;
+using Jint.Runtime.Descriptors;
 using Jint.Runtime.Interop;
 using System;
 using System.Collections.Generic;
@@ -31,37 +33,48 @@ namespace WebAtoms
             (element as Page).LoadFromXaml(content);
         }
 
-        //public class ObjectReferenceWrapper : JsValue, IObjectWrapper
-        //{
-        //    public ObjectReferenceWrapper(bool value) : base(value)
-        //    {
+        public class ObjectReferenceWrapper : ObjectInstance, IObjectWrapper
+        {
 
-        //    }
+            public ObjectReferenceWrapper(Engine engine):base(engine)
+            {
 
-        //    public ObjectReferenceWrapper(double value) : base(value)
-        //    {
+            }
 
-        //    }
 
-        //    public ObjectReferenceWrapper(string value) : base(value)
-        //    {
+            public object Target { get; set; }
 
-        //    }
+            public override Types Type => Types.Symbol;
 
-        //    public ObjectReferenceWrapper(ObjectInstance value) : base(value)
-        //    {
+            public override bool Equals(JsValue other)
+            {
+                if (other is ObjectReferenceWrapper orw) {
+                    return orw.Target == Target;
+                }
+                return false;
+            }
 
-        //    }
+            public override IEnumerable<KeyValuePair<string, IPropertyDescriptor>> GetOwnProperties()
+            {
+                yield break;
+            }
 
-        //    public object Target { get; set; }
+            public override IPropertyDescriptor GetOwnProperty(string propertyName)
+            {
+                return null;
+            }
 
-            
-        //}
+            public override object ToObject()
+            {
+                return Target;
+            }
+
+        }
 
         public JsValue FindChild(Element root, string name)
         {
             var item = root.FindByName<Element>(name);
-            var v = new ObjectWrapper(engine, item);
+            var v = new ObjectReferenceWrapper(engine) {Target = item };
             return v;
         }
 
@@ -333,8 +346,11 @@ namespace WebAtoms
                     var script = await client.GetStringAsync(item);
                     Log($"Executing {item}");
                     BaseUrl = item;
-                    engine.Execute(script, new Jint.Parser.ParserOptions {
-                        Source = item
+                    //engine.Execute(script, new Jint.Parser.ParserOptions {
+                    //    Source = item
+                    //});
+                    engine.Execute(script, new Esprima.ParserOptions(item) {
+                         SourceType = SourceType.Script
                     });
                 }
                 catch (Exception ex) {
