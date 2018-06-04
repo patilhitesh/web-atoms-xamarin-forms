@@ -1,15 +1,11 @@
 ﻿using Jint;
 using Jint.Native;
-using Jint.Native.Object;
 using Jint.Runtime;
-using Jint.Runtime.Descriptors;
-using Jint.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Net.Http;
-using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Forms;
@@ -33,49 +29,12 @@ namespace WebAtoms
             (element as Page).LoadFromXaml(content);
         }
 
-        public class ObjectReferenceWrapper : ObjectInstance, IObjectWrapper
-        {
-
-            public ObjectReferenceWrapper(Engine engine):base(engine)
-            {
-
-            }
-
-
-            public object Target { get; set; }
-
-            public override Types Type => Types.Symbol;
-
-            public override bool Equals(JsValue other)
-            {
-                if (other is ObjectReferenceWrapper orw) {
-                    return orw.Target == Target;
-                }
-                return false;
-            }
-
-            public override IEnumerable<KeyValuePair<string, IPropertyDescriptor>> GetOwnProperties()
-            {
-                yield break;
-            }
-
-            public override IPropertyDescriptor GetOwnProperty(string propertyName)
-            {
-                return null;
-            }
-
-            public override object ToObject()
-            {
-                return Target;
-            }
-
-        }
-
-        public JsValue FindChild(Element root, string name)
+        public Element FindChild(Element root, string name)
         {
             var item = root.FindByName<Element>(name);
-            var v = new ObjectReferenceWrapper(engine) {Target = item };
-            return v;
+            //var v = new ObjectReferenceWrapper(engine) {Target = item };
+            //return v;
+            return item;
         }
 
         private Dictionary<int,System.Threading.CancellationTokenSource> intervalCancells = new Dictionary<int, System.Threading.CancellationTokenSource>();
@@ -118,6 +77,7 @@ namespace WebAtoms
 
         public Engine engine = new Engine(a => {
             a.CatchClrExceptions(f => true);
+            a.DebugMode();
         });
 
         IEnumerable<System.Reflection.TypeInfo> types;
@@ -142,18 +102,6 @@ namespace WebAtoms
                 throw new InvalidOperationException("Control already attached");
             }
             WAContext.SetAtomControl(element, control);
-        }
-
-        public class AtomDelegate {
-
-            public JsValue callback;
-
-            public void OnEvent(Object sender, Object arg) {
-                callback.Invoke(JsValue.FromObject(AtomBridge.Instance.engine, arg));
-            }
-
-            public static MethodInfo OnEventMethod = typeof(AtomDelegate).GetMethod("OnEvent");
-
         }
 
         public IDisposable AddEventHandler(Element element, string name, JsValue callback, bool? capture)
@@ -417,57 +365,4 @@ namespace WebAtoms
 
 
     }
-
-    public static class DictionaryExtensions {
-
-        static Dictionary<string, PropertyInfo> properties = new Dictionary<string, PropertyInfo>();
-
-        public static TValue GetOrCreate<TKey, TValue>(
-            this Dictionary<TKey,TValue> d,
-            TKey key,
-            Func<TKey, TValue> factory) {
-            if (d.TryGetValue(key, out TValue value))
-                return value;
-            TValue v = factory(key);
-            d[key] = v;
-            return v;
-        }
-
-        public static PropertyInfo GetProperty(this object value, string name) {
-            Type type = value.GetType();
-            string key = $"{type.FullName}.{name}";
-
-            return properties.GetOrCreate(key, k => type.GetProperties().First(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
-        }
-
-        public static bool IsEmpty(this string text) {
-            return string.IsNullOrWhiteSpace(text);
-        }
-    }
-
-    public class AtomDisposable : IDisposable
-    {
-        readonly Action action;
-
-        public AtomDisposable(Action action)
-        {
-            this.action = action;
-        }
-
-        public void Dispose()
-        {
-            action?.Invoke();
-        }
-    }
-
-    public class EmptyDisposable : IDisposable
-    {
-        public static EmptyDisposable instance = new EmptyDisposable();
-
-        public void Dispose()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
 }

@@ -48,7 +48,12 @@
   <ItemGroup>
     <Compile Include="AtomArray1.cs" />
     <Compile Include="AtomBridge.cs" />
+    <Compile Include="AtomDelegate.cs" />
+    <Compile Include="AtomDisposable.cs" />
     <Compile Include="AtomEnumerable.cs" />
+    <Compile Include="DictionaryExtensions.cs" />
+    <Compile Include="EmptyDisposable.cs" />
+    <Compile Include="ObjectReferenceWrapper.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
