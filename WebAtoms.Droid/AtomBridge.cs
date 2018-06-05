@@ -78,6 +78,7 @@ namespace WebAtoms
         public Engine engine = new Engine(a => {
             a.CatchClrExceptions(f => true);
             a.DebugMode();
+            
         });
 
         IEnumerable<System.Reflection.TypeInfo> types;

@@ -1,5 +1,6 @@
 ﻿using Jint.Native;
 using Jint.Native.Array;
+using Jint.Native.Number;
 using Jint.Runtime.Interop;
 using System;
 using System.Collections;
@@ -33,8 +34,8 @@ namespace WebAtoms
 
         NotifyCollectionChangedEventArgs CreateEventArgs(JsValue[] plist)
         {
-            var mode = plist[0].AsString();
-            var index = (int)plist[1].AsNumber();
+            var mode = (plist[0] as JsString).ToString();
+            var index = (int)(plist[1] as JsNumber).ToObject();
 
             switch (mode) {
                 case "refresh":

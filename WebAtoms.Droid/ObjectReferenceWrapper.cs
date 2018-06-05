@@ -19,8 +19,6 @@ namespace WebAtoms
 
         public object Target { get; set; }
 
-        public override Types Type => Types.Symbol;
-
         public override bool Equals(JsValue other)
         {
             if (other is ObjectReferenceWrapper orw)
@@ -30,12 +28,12 @@ namespace WebAtoms
             return false;
         }
 
-        public override IEnumerable<KeyValuePair<string, IPropertyDescriptor>> GetOwnProperties()
+        public override IEnumerable<KeyValuePair<string, PropertyDescriptor>> GetOwnProperties()
         {
             yield break;
         }
 
-        public override IPropertyDescriptor GetOwnProperty(string propertyName)
+        public override PropertyDescriptor GetOwnProperty(string propertyName)
         {
             return null;
         }
