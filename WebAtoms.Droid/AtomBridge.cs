@@ -1,6 +1,7 @@
 ﻿using Jint;
 using Jint.Native;
 using Jint.Runtime;
+using Jint.Runtime.Interop;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,13 +17,79 @@ namespace WebAtoms
     public class AtomBridge
     {
 
+        public HttpClient client;
+
         public AtomBridge()
         {
+            client = new HttpClient();
+            engine.Global.Put("global", engine.Global, false);
             engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
             engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
 
-            engine.Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i); };");
-            engine.Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
+            engine.Global.Put("document", Jint.Native.JsValue.Null, true);
+            // Execute("var global = {};");
+            Execute("var console = {};");
+            Execute("console.log = function(l) { bridge.Log('log',l); };");
+            Execute("console.warn = function(l) { bridge.Log('warn',l); };");
+            Execute("console.error = function(l) { bridge.Log('error',l); };");
+
+            Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i, false); };");
+            Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
+            Execute("var setTimeout = function(v,i){ return bridge.SetInterval(v,i, true); };");
+            Execute("var clearTimeout = clearInterval;");
+        }
+
+        private bool initialized = false;
+
+        public void Log(string title, string text) {
+            System.Diagnostics.Debug.WriteLine($"{title}: {text}");
+        }
+
+        public async Task InitAsync(string url) {
+            if (initialized)
+                return;
+
+            await ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js");
+            await ExecuteScriptAsync($"{url}/polyfills/endsWith.js");
+            await ExecuteScriptAsync($"{url}/polyfills/startsWith.js");
+            await ExecuteScriptAsync($"{url}/polyfills/includes.js");
+
+            await ExecuteScriptAsync($"{url}/umd.js");
+
+            Execute("UMD.viewPrefix = 'xf';");
+            Execute("UMD.defaultApp = 'web-atoms-core/dist/xf/XFApp';");
+            Execute("AmdLoader.moduleLoader = function(n,u,s,e) { bridge.LoadModuleScript(n,u,s,e); }");
+            Execute("AmdLoader.moduleProgress= function(n,i) { bridge.ModuleProgress(n,i); }");
+        }
+
+        public void ModuleProgress(string name, double progress) {
+            System.Diagnostics.Debug.WriteLine(name);
+        }
+
+        public void Execute(string script, string url = null) {
+            Device.BeginInvokeOnMainThread(() => { 
+                System.Diagnostics.Debug.WriteLine($"Executing: {script}");
+                try
+                {
+                    engine.Execute(script, new Esprima.ParserOptions(url)
+                    {
+                        SourceType = SourceType.Script
+                    });
+                }
+                catch (JavaScriptException jse) {
+                    System.Diagnostics.Debug.WriteLine($"{jse.LineNumber} {jse.ToString()}");
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                }
+            });
+        }
+
+        public async Task ExecuteScriptAsync(string url) {
+//            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
+            string script = await client.GetStringAsync(url);
+            Execute(script, url);
         }
 
         public void LoadContent(Element element, string content) {
@@ -46,7 +113,7 @@ namespace WebAtoms
             }
         }
 
-        public int SetInterval(JsValue value, int milliSeconds) {
+        public int SetInterval(JsValue value, int milliSeconds, bool once) {
 
             System.Threading.CancellationTokenSource cancellation = new System.Threading.CancellationTokenSource();
 
@@ -57,6 +124,9 @@ namespace WebAtoms
                     {
                         await Task.Delay(TimeSpan.FromMilliseconds(milliSeconds), cancellation.Token);
                         value.Invoke();
+                        if (once) {
+                            break;
+                        }
                     }
                     catch (TaskCanceledException) { }
                 }
@@ -78,6 +148,9 @@ namespace WebAtoms
         public Engine engine = new Engine(a => {
             a.CatchClrExceptions(f => true);
             a.DebugMode();
+            a.AllowDebuggerStatement();
+            a.Strict(false);
+            
             
         });
 
@@ -284,77 +357,98 @@ namespace WebAtoms
             return url + path + ".js";
         }
 
-        public async Task ExecuteScriptAsync(string item) {
-            using (var client = new HttpClient())
-            {
+        public void LoadModuleScript(string name, string url, JsValue success, JsValue error) {
+            Task.Run(async () => {
+                try {
 
-                try
-                {
+                    string script = await client.GetStringAsync(url);
 
-                    Log($"Downloading {item}");
-                    var script = await client.GetStringAsync(item);
-                    Log($"Executing {item}");
-                    BaseUrl = item;
-                    //engine.Execute(script, new Jint.Parser.ParserOptions {
-                    //    Source = item
-                    //});
-                    engine.Execute(script, new Esprima.ParserOptions(item) {
-                         SourceType = SourceType.Script
-                    });
-                }
-                catch (Exception ex) {
-                    Log($"Failed: {item}");
-                    Log(ex);
-                    throw;
-                }
-            }
-        }
-
-        public void AppLoaded(JsValue require, JsValue exports) {
-
-            try
-            {
-                //Jint.Native.Object.ObjectConstructor oc = exports.AsObject().GetProperty("App").Value.AsObject() as Jint.Native.Object.ObjectConstructor;
-                //var appObject = oc.Construct(new JsValue[] { });
-
-                //appObject.GetProperty("main").Value.Invoke();
-
-                engine.Global.Put("_require", require, true);
-                engine.Global.Put("_exports", exports, true);
-
-                engine.Execute($"var appBridge = _require('web-atoms-core/bin/core/bridge');");
-                engine.Execute($"appBridge.AtomBridge.instance = bridge;");
-
-                engine.Execute($"var app = new _exports.App();" +
-                    $"app.main();");
-
-
-                Log("App loaded");
-            }
-            catch (Exception ex) {
-                Log(ex);
-
-            }
-        }
-
-        public void ExecuteScript(string item, JsValue callback) {
-            Device.BeginInvokeOnMainThread(async () => {
-
-                await ExecuteScriptAsync(item);
-
-                try
-                {
-                    if (callback != null)
+                    success.Invoke(new ClrFunctionInstance(engine, (_this, args) =>
                     {
-                        callback.Invoke();
-                    }
+
+                        Execute(script, url);
+
+                        return JsValue.Undefined;
+                    }));
+                } catch (Jint.Runtime.JavaScriptException ex) {
+                    System.Diagnostics.Debug.WriteLine($"{ex.LineNumber} {ex.ToString()}");
+                    error.Invoke(JsValue.Null, new JsString(ex.ToString()));
                 }
-                catch (Exception ex) {
-                    Log(ex);
-                }
-                
+
             });
         }
+
+        //public async Task ExecuteScriptAsync(string item) {
+        //    using (var client = new HttpClient())
+        //    {
+
+        //        try
+        //        {
+
+        //            Log($"Downloading {item}");
+        //            var script = await client.GetStringAsync(item);
+        //            Log($"Executing {item}");
+        //            BaseUrl = item;
+        //            //Execute(script, new Jint.Parser.ParserOptions {
+        //            //    Source = item
+        //            //});
+        //            Execute(script, new Esprima.ParserOptions(item) {
+        //                 SourceType = SourceType.Script
+        //            });
+        //        }
+        //        catch (Exception ex) {
+        //            Log($"Failed: {item}");
+        //            Log(ex);
+        //            throw;
+        //        }
+        //    }
+        //}
+
+        //public void AppLoaded(JsValue require, JsValue exports) {
+
+        //    try
+        //    {
+        //        //Jint.Native.Object.ObjectConstructor oc = exports.AsObject().GetProperty("App").Value.AsObject() as Jint.Native.Object.ObjectConstructor;
+        //        //var appObject = oc.Construct(new JsValue[] { });
+
+        //        //appObject.GetProperty("main").Value.Invoke();
+
+        //        engine.Global.Put("_require", require, true);
+        //        engine.Global.Put("_exports", exports, true);
+
+        //        Execute($"var appBridge = _require('web-atoms-core/bin/core/bridge');");
+        //        Execute($"appBridge.AtomBridge.instance = bridge;");
+
+        //        Execute($"var app = new _exports.App();" +
+        //            $"app.main();");
+
+
+        //        Log("App loaded");
+        //    }
+        //    catch (Exception ex) {
+        //        Log(ex);
+
+        //    }
+        //}
+
+        //public void ExecuteScript(string item, JsValue callback) {
+        //    Device.BeginInvokeOnMainThread(async () => {
+
+        //        await ExecuteScriptAsync(item);
+
+        //        try
+        //        {
+        //            if (callback != null)
+        //            {
+        //                callback.Invoke();
+        //            }
+        //        }
+        //        catch (Exception ex) {
+        //            Log(ex);
+        //        }
+                
+        //    });
+        //}
 
 
         public Action<object> OnLog = l => { System.Diagnostics.Debug.WriteLine(l); };
