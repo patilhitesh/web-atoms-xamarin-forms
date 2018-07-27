@@ -1,4 +1,6 @@
-﻿using Jint;
+﻿using Esprima;
+using Esprima.Ast;
+using Jint;
 using Jint.Native;
 using Jint.Runtime;
 using Jint.Runtime.Interop;
@@ -29,9 +31,9 @@ namespace WebAtoms
             engine.Global.Put("document", Jint.Native.JsValue.Null, true);
             // Execute("var global = {};");
             Execute("var console = {};");
-            Execute("console.log = function(l) { bridge.Log('log',l); };");
-            Execute("console.warn = function(l) { bridge.Log('warn',l); };");
-            Execute("console.error = function(l) { bridge.Log('error',l); };");
+            Execute("console.log = function(l) { bridge.Log('log', typeof l === 'string' ? l : JSON.stringify(l)); };");
+            Execute("console.warn = function(l) { bridge.Log('warn',typeof l === 'string' ? l : JSON.stringify(l)); };");
+            Execute("console.error = function(l) { bridge.Log('error',typeof l === 'string' ? l : JSON.stringify(l)); };");
 
             Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i, false); };");
             Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
@@ -67,14 +69,30 @@ namespace WebAtoms
         }
 
         public void Execute(string script, string url = null) {
-            Device.BeginInvokeOnMainThread(() => { 
-                System.Diagnostics.Debug.WriteLine($"Executing: {script}");
+            ///Device.BeginInvokeOnMainThread(() => { 
+            if (url != null)
+            {
+                System.Diagnostics.Debug.WriteLine($"Executing: {url}");
+            }
                 try
                 {
+                if (url != null)
+                {
+                    JavaScriptParser jsp = new JavaScriptParser(script, new ParserOptions(url)
+                    {
+                        SourceType = SourceType.Script
+                    });
+                    Program p = jsp.ParseProgram();
+                    engine.Execute(p);
+                }
+                else
+                {
+
                     engine.Execute(script, new Esprima.ParserOptions(url)
                     {
                         SourceType = SourceType.Script
                     });
+                }
                 }
                 catch (JavaScriptException jse) {
                     System.Diagnostics.Debug.WriteLine($"{jse.LineNumber} {jse.ToString()}");
@@ -83,7 +101,7 @@ namespace WebAtoms
                 {
                     System.Diagnostics.Debug.WriteLine(ex);
                 }
-            });
+            //});
         }
 
         public async Task ExecuteScriptAsync(string url) {
@@ -358,7 +376,7 @@ namespace WebAtoms
         }
 
         public void LoadModuleScript(string name, string url, JsValue success, JsValue error) {
-            Task.Run(async () => {
+            Device.BeginInvokeOnMainThread(async () => {
                 try {
 
                     string script = await client.GetStringAsync(url);

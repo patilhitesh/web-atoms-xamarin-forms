@@ -38,7 +38,10 @@ namespace WebAtomsDemo
                     await AtomBridge.Instance.InitAsync($"{amdLoader}");
                     AtomBridge.Instance.Execute($"UMD.map('reflect-metadata', '{webAtomsCore}/node_modules/reflect-metadata/Reflect.js')");
                     AtomBridge.Instance.Execute($"UMD.map('web-atoms-core', '{webAtomsCore}/')");
-                    AtomBridge.Instance.Execute($"UMD.loadView('web-atoms-core/dist/xf/samples/views/MovieList')");
+                    AtomBridge.Instance.Execute(
+                        "UMD.loadView('web-atoms-core/dist/xf/samples/views/MovieList')" +
+                        ".then(function (r) { console.log(r); })" +
+                        ".catch(function (e) { console.log(e); });");
 
                     // var val = AtomBridge.Instance.engine.Global.Get("Promise");
                     // System.Diagnostics.Debug.WriteLine(val);
