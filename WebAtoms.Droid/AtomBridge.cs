@@ -1,9 +1,4 @@
-﻿using Esprima;
-using Esprima.Ast;
-using Jint;
-using Jint.Native;
-using Jint.Runtime;
-using Jint.Runtime.Interop;
+﻿using Com.Eclipsesource.V8;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -16,24 +11,30 @@ using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
-    public class AtomBridge
+    public class AtomBridge: IJSObject
     {
 
         public HttpClient client;
+        private V8Object nullValue;
 
         public AtomBridge()
         {
             client = new HttpClient();
-            engine.Global.Put("global", engine.Global, false);
-            engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
-            engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
+            engine.Add("global", engine);
+            engine.AddNull("document");
+            nullValue = engine.GetObject("document");
+            // engine.Global.Put("global", engine.Global, false);
+            // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
+            // engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
 
-            engine.Global.Put("document", Jint.Native.JsValue.Null, true);
+            // engine.Global.Put("document", Jint.Native.JsValue.Null, true);
             // Execute("var global = {};");
+            var v8Bridge = engine.AddClrObject(this);
+            engine.Add("bridge", v8Bridge);
             Execute("var console = {};");
-            Execute("console.log = function(l) { bridge.Log('log', typeof l === 'string' ? l : JSON.stringify(l)); };");
-            Execute("console.warn = function(l) { bridge.Log('warn',typeof l === 'string' ? l : JSON.stringify(l)); };");
-            Execute("console.error = function(l) { bridge.Log('error',typeof l === 'string' ? l : JSON.stringify(l)); };");
+            Execute("console.log = function(l) { bridge.Log('log', l); };");
+            Execute("console.warn = function(l) { bridge.Log('warn', l); };");
+            Execute("console.error = function(l) { bridge.Log('error', l); };");
 
             Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i, false); };");
             Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
@@ -43,7 +44,7 @@ namespace WebAtoms
 
         private bool initialized = false;
 
-        public void Log(string title, string text) {
+        public void Log(string title, V8Value text) {
             System.Diagnostics.Debug.WriteLine($"{title}: {text}");
         }
 
@@ -74,33 +75,17 @@ namespace WebAtoms
             {
                 System.Diagnostics.Debug.WriteLine($"Executing: {url}");
             }
-                try
-                {
-                if (url != null)
-                {
-                    JavaScriptParser jsp = new JavaScriptParser(script, new ParserOptions(url)
-                    {
-                        SourceType = SourceType.Script
-                    });
-                    Program p = jsp.ParseProgram();
-                    engine.Execute(p);
-                }
-                else
-                {
-
-                    engine.Execute(script, new Esprima.ParserOptions(url)
-                    {
-                        SourceType = SourceType.Script
-                    });
-                }
-                }
-                catch (JavaScriptException jse) {
-                    System.Diagnostics.Debug.WriteLine($"{jse.LineNumber} {jse.ToString()}");
-                }
-                catch (Exception ex)
-                {
-                    System.Diagnostics.Debug.WriteLine(ex);
-                }
+            try
+            {
+                engine.ExecuteScript(script, url, 0);
+            }
+            catch (V8ScriptException jse) {
+                System.Diagnostics.Debug.WriteLine($"{jse.LineNumber} {jse.ToString()}");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
             //});
         }
 
@@ -131,7 +116,7 @@ namespace WebAtoms
             }
         }
 
-        public int SetInterval(JsValue value, int milliSeconds, bool once) {
+        public int SetInterval(V8Function value, int milliSeconds, bool once) {
 
             System.Threading.CancellationTokenSource cancellation = new System.Threading.CancellationTokenSource();
 
@@ -141,7 +126,7 @@ namespace WebAtoms
                     try
                     {
                         await Task.Delay(TimeSpan.FromMilliseconds(milliSeconds), cancellation.Token);
-                        value.Invoke();
+                        value.Call(nullValue, new V8Array(value.Rutime));
                         if (once) {
                             break;
                         }
@@ -163,14 +148,7 @@ namespace WebAtoms
         public string BaseUrl = "";
 
 
-        public Engine engine = new Engine(a => {
-            a.CatchClrExceptions(f => true);
-            a.DebugMode();
-            a.AllowDebuggerStatement();
-            a.Strict(false);
-            
-            
-        });
+        public V8 engine = V8.CreateV8Runtime();
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
@@ -185,7 +163,7 @@ namespace WebAtoms
             return view;
         }
 
-        public void AttachControl(Element element, JsValue control) {
+        public void AttachControl(Element element, V8Object control) {
             var ac = WAContext.GetAtomControl(element);
             if(ac != null)
             {
@@ -196,7 +174,7 @@ namespace WebAtoms
             WAContext.SetAtomControl(element, control);
         }
 
-        public IDisposable AddEventHandler(Element element, string name, JsValue callback, bool? capture)
+        public IDisposable AddEventHandler(Element element, string name, V8Function callback, bool? capture)
         {
             var e = element.GetType().GetEvent(name);
 
@@ -211,7 +189,7 @@ namespace WebAtoms
                 pe.callback = null;
             });
         }
-        public IDisposable WatchProperty(object obj, string name, JsValue callback)
+        public IDisposable WatchProperty(object obj, string name, V8Function callback)
         {
             if (obj is INotifyPropertyChanged element)
             {
@@ -222,7 +200,7 @@ namespace WebAtoms
                 {
                     if (e.PropertyName == name)
                     {
-                        callback.Invoke( JsValue.FromObject(engine, pinfo.GetValue(obj)));
+                        callback.Call( nullValue, V8ValueExtensions.ToV8Array(engine, pinfo.GetValue(obj)) );
                     }
                 };
 
@@ -236,9 +214,9 @@ namespace WebAtoms
             return EmptyDisposable.instance;
         }
 
-        public object AtomParent(Element element, JsValue climbUp)
+        public object AtomParent(Element element, V8Object climbUp)
         {
-            bool cu = !climbUp.IsUndefined() && !climbUp.IsNull() && climbUp.AsBoolean();
+            bool cu = !climbUp.IsUndefined && climbUp != null && climbUp.GetBoolean("");
             do {
                 var e = WAContext.GetAtomControl(element);
                 if (e != null)
