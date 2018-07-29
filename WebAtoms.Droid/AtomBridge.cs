@@ -1,4 +1,4 @@
-﻿using Com.Eclipsesource.V8;
+﻿using Org.Liquidplayer.Javascript;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -11,18 +11,19 @@ using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
-    public class AtomBridge: IJSObject
+    public class AtomBridge: IJSService
     {
 
+        public JSContext engine = new JSContext();
+
         public HttpClient client;
-        private V8Object nullValue;
 
         public AtomBridge()
         {
             client = new HttpClient();
-            engine.Add("global", engine);
-            engine.AddNull("document");
-            nullValue = engine.GetObject("document");
+            engine.SetJSPropertyValue("global", engine);
+            engine.SetJSPropertyValue("document", null);
+
             // engine.Global.Put("global", engine.Global, false);
             // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
             // engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
@@ -30,7 +31,7 @@ namespace WebAtoms
             // engine.Global.Put("document", Jint.Native.JsValue.Null, true);
             // Execute("var global = {};");
             var v8Bridge = engine.AddClrObject(this);
-            engine.Add("bridge", v8Bridge);
+            engine.SetJSPropertyValue("bridge", v8Bridge);
             Execute("var console = {};");
             Execute("console.log = function(l) { bridge.Log('log', l); };");
             Execute("console.warn = function(l) { bridge.Log('warn', l); };");
@@ -44,7 +45,7 @@ namespace WebAtoms
 
         private bool initialized = false;
 
-        public void Log(string title, V8Value text) {
+        public void Log(string title, JSValue text) {
             System.Diagnostics.Debug.WriteLine($"{title}: {text}");
         }
 
@@ -79,8 +80,8 @@ namespace WebAtoms
             {
                 engine.ExecuteScript(script, url, 0);
             }
-            catch (V8ScriptException jse) {
-                System.Diagnostics.Debug.WriteLine($"{jse.LineNumber} {jse.ToString()}");
+            catch ( JSException  jse) {
+                System.Diagnostics.Debug.WriteLine($"{jse.ToString()}\r\n{jse.Stack()}");
             }
             catch (Exception ex)
             {
@@ -116,7 +117,7 @@ namespace WebAtoms
             }
         }
 
-        public int SetInterval(V8Function value, int milliSeconds, bool once) {
+        public int SetInterval(JSFunction value, int milliSeconds, bool once) {
 
             System.Threading.CancellationTokenSource cancellation = new System.Threading.CancellationTokenSource();
 
@@ -147,8 +148,6 @@ namespace WebAtoms
 
         public string BaseUrl = "";
 
-
-        public V8 engine = V8.CreateV8Runtime();
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
@@ -240,11 +239,12 @@ namespace WebAtoms
             return null;
         }
 
-        public void VisitDescendents(Element element, JsValue action)
+        public void VisitDescendents(Element element, V8Function action)
         {
             foreach (var e in (element as IElementController).LogicalChildren) {
                 var ac = WAContext.GetAtomControl(e);
-                var r = action.Invoke(
+                var r = action.Call(null,
+
                     JsValue.FromObject(engine,e), 
                     (JsValue)ac);
                 if (r.IsUndefined() || r.IsNull() || !r.AsBoolean())

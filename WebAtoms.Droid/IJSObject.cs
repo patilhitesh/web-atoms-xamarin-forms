@@ -12,7 +12,7 @@ using Android.Widget;
 
 namespace WebAtoms
 {
-    public interface IJSObject
+    public interface IJSService
     {
     }
 }
