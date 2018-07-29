@@ -9,6 +9,7 @@ using Android.OS;
 using Android.Runtime;
 using Android.Views;
 using Android.Widget;
+using Java.Interop;
 using Org.Liquidplayer.Javascript;
 using Xamarin.Forms;
 
@@ -92,14 +93,21 @@ namespace WebAtoms
             var jobj = new JSObject(target.Context);
 
 
-            foreach (var item in value.GetType().GetMethods())
+            foreach (var item in value.GetType().GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
             {
-                JSClrFunction clrFunction = new JSClrFunction(target.Context, (x) => {
+                try
+                {
+                    JSClrFunction clrFunction = new JSClrFunction(target.Context, (x) =>
+                    {
 
-                    return item.Invoke(value, x);
-                });
+                        return item.Invoke(value, x);
+                    });
 
-                jobj.InvokeProperty(item.Name, clrFunction);
+                    jobj.InvokeProperty(item.Name, clrFunction);
+                }
+                catch (Exception ex) {
+                    throw;
+                }
             }
 
             return jobj;
@@ -114,14 +122,25 @@ namespace WebAtoms
 
         public JSClrFunction(JSContext context, Func<object[], object> run)
             : base(context, 
-                "Run", 
+                GetMethodName(),
                 Java.Lang.Class.FromType(typeof(JSClrFunction)))
         {
             this.runFunction = run;
         }
 
-        public object Run(params object[] args) {
-            return runFunction(args);
+        private static Java.Lang.Reflect.Method GetMethodName()
+        {
+            var c = Java.Lang.Class.FromType(typeof(JSClrFunction));
+            var ms = c.GetMethods();
+            var mns = ms.Select(x => x.Name).ToList();
+            var m = ms.FirstOrDefault(x => x.Name.Equals("RunAction", StringComparison.OrdinalIgnoreCase));
+            return m;
+        }
+
+        //[Register("runAction", "([Ljava/lang/object;)Ljava/lang/Object;", "GetAddHandler")]
+        [Export("runAction")]
+        public Java.Lang.Object RunAction(JSArray args) {
+            return runFunction(args.ToArray())?.Wrap(this.Context);
         }
 
     }

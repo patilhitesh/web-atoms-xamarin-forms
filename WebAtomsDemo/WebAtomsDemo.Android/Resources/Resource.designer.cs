@@ -220,6 +220,10 @@ namespace WebAtomsDemo.Droid
 			global::WebAtoms.Resource.Attribute.layout_keyline = global::WebAtomsDemo.Droid.Resource.Attribute.layout_keyline;
 			global::WebAtoms.Resource.Attribute.layout_scrollFlags = global::WebAtomsDemo.Droid.Resource.Attribute.layout_scrollFlags;
 			global::WebAtoms.Resource.Attribute.layout_scrollInterpolator = global::WebAtomsDemo.Droid.Resource.Attribute.layout_scrollInterpolator;
+			global::WebAtoms.Resource.Attribute.liquidcore_URI = global::WebAtomsDemo.Droid.Resource.Attribute.liquidcore_URI;
+			global::WebAtoms.Resource.Attribute.liquidcore_argv = global::WebAtomsDemo.Droid.Resource.Attribute.liquidcore_argv;
+			global::WebAtoms.Resource.Attribute.liquidcore_surface = global::WebAtomsDemo.Droid.Resource.Attribute.liquidcore_surface;
+			global::WebAtoms.Resource.Attribute.liquidcore_surfaces = global::WebAtomsDemo.Droid.Resource.Attribute.liquidcore_surfaces;
 			global::WebAtoms.Resource.Attribute.listChoiceBackgroundIndicator = global::WebAtomsDemo.Droid.Resource.Attribute.listChoiceBackgroundIndicator;
 			global::WebAtoms.Resource.Attribute.listDividerAlertDialog = global::WebAtomsDemo.Droid.Resource.Attribute.listDividerAlertDialog;
 			global::WebAtoms.Resource.Attribute.listItemLayout = global::WebAtomsDemo.Droid.Resource.Attribute.listItemLayout;
@@ -1146,6 +1150,7 @@ namespace WebAtomsDemo.Droid
 			global::WebAtoms.Resource.Layout.design_navigation_menu = global::WebAtomsDemo.Droid.Resource.Layout.design_navigation_menu;
 			global::WebAtoms.Resource.Layout.design_navigation_menu_item = global::WebAtomsDemo.Droid.Resource.Layout.design_navigation_menu_item;
 			global::WebAtoms.Resource.Layout.design_text_input_password_icon = global::WebAtomsDemo.Droid.Resource.Layout.design_text_input_password_icon;
+			global::WebAtoms.Resource.Layout.liquid_view = global::WebAtomsDemo.Droid.Resource.Layout.liquid_view;
 			global::WebAtoms.Resource.Layout.mr_chooser_dialog = global::WebAtomsDemo.Droid.Resource.Layout.mr_chooser_dialog;
 			global::WebAtoms.Resource.Layout.mr_chooser_list_item = global::WebAtomsDemo.Droid.Resource.Layout.mr_chooser_list_item;
 			global::WebAtoms.Resource.Layout.mr_controller_material_dialog_b = global::WebAtomsDemo.Droid.Resource.Layout.mr_controller_material_dialog_b;
@@ -1937,6 +1942,11 @@ namespace WebAtomsDemo.Droid
 			global::WebAtoms.Resource.Styleable.LinearLayoutCompat_Layout_android_layout_height = global::WebAtomsDemo.Droid.Resource.Styleable.LinearLayoutCompat_Layout_android_layout_height;
 			global::WebAtoms.Resource.Styleable.LinearLayoutCompat_Layout_android_layout_weight = global::WebAtomsDemo.Droid.Resource.Styleable.LinearLayoutCompat_Layout_android_layout_weight;
 			global::WebAtoms.Resource.Styleable.LinearLayoutCompat_Layout_android_layout_width = global::WebAtomsDemo.Droid.Resource.Styleable.LinearLayoutCompat_Layout_android_layout_width;
+			global::WebAtoms.Resource.Styleable.LiquidView = global::WebAtomsDemo.Droid.Resource.Styleable.LiquidView;
+			global::WebAtoms.Resource.Styleable.LiquidView_liquidcore_URI = global::WebAtomsDemo.Droid.Resource.Styleable.LiquidView_liquidcore_URI;
+			global::WebAtoms.Resource.Styleable.LiquidView_liquidcore_argv = global::WebAtomsDemo.Droid.Resource.Styleable.LiquidView_liquidcore_argv;
+			global::WebAtoms.Resource.Styleable.LiquidView_liquidcore_surface = global::WebAtomsDemo.Droid.Resource.Styleable.LiquidView_liquidcore_surface;
+			global::WebAtoms.Resource.Styleable.LiquidView_liquidcore_surfaces = global::WebAtomsDemo.Droid.Resource.Styleable.LiquidView_liquidcore_surfaces;
 			global::WebAtoms.Resource.Styleable.ListPopupWindow = global::WebAtomsDemo.Droid.Resource.Styleable.ListPopupWindow;
 			global::WebAtoms.Resource.Styleable.ListPopupWindow_android_dropDownHorizontalOffset = global::WebAtomsDemo.Droid.Resource.Styleable.ListPopupWindow_android_dropDownHorizontalOffset;
 			global::WebAtoms.Resource.Styleable.ListPopupWindow_android_dropDownVerticalOffset = global::WebAtomsDemo.Droid.Resource.Styleable.ListPopupWindow_android_dropDownVerticalOffset;
@@ -2760,6 +2770,18 @@ namespace WebAtomsDemo.Droid
 			
 			// aapt resource value: 0x7f010107
 			public const int layout_scrollInterpolator = 2130772231;
+			
+			// aapt resource value: 0x7f010155
+			public const int liquidcore_URI = 2130772309;
+			
+			// aapt resource value: 0x7f010156
+			public const int liquidcore_argv = 2130772310;
+			
+			// aapt resource value: 0x7f010158
+			public const int liquidcore_surface = 2130772312;
+			
+			// aapt resource value: 0x7f010157
+			public const int liquidcore_surfaces = 2130772311;
 			
 			// aapt resource value: 0x7f01009b
 			public const int listChoiceBackgroundIndicator = 2130772123;
@@ -5662,85 +5684,88 @@ namespace WebAtomsDemo.Droid
 			public const int design_text_input_password_icon = 2130968616;
 			
 			// aapt resource value: 0x7f040029
-			public const int mr_chooser_dialog = 2130968617;
+			public const int liquid_view = 2130968617;
 			
 			// aapt resource value: 0x7f04002a
-			public const int mr_chooser_list_item = 2130968618;
+			public const int mr_chooser_dialog = 2130968618;
 			
 			// aapt resource value: 0x7f04002b
-			public const int mr_controller_material_dialog_b = 2130968619;
+			public const int mr_chooser_list_item = 2130968619;
 			
 			// aapt resource value: 0x7f04002c
-			public const int mr_controller_volume_item = 2130968620;
+			public const int mr_controller_material_dialog_b = 2130968620;
 			
 			// aapt resource value: 0x7f04002d
-			public const int mr_playback_control = 2130968621;
+			public const int mr_controller_volume_item = 2130968621;
 			
 			// aapt resource value: 0x7f04002e
-			public const int mr_volume_control = 2130968622;
+			public const int mr_playback_control = 2130968622;
 			
 			// aapt resource value: 0x7f04002f
-			public const int notification_action = 2130968623;
+			public const int mr_volume_control = 2130968623;
 			
 			// aapt resource value: 0x7f040030
-			public const int notification_action_tombstone = 2130968624;
+			public const int notification_action = 2130968624;
 			
 			// aapt resource value: 0x7f040031
-			public const int notification_media_action = 2130968625;
+			public const int notification_action_tombstone = 2130968625;
 			
 			// aapt resource value: 0x7f040032
-			public const int notification_media_cancel_action = 2130968626;
+			public const int notification_media_action = 2130968626;
 			
 			// aapt resource value: 0x7f040033
-			public const int notification_template_big_media = 2130968627;
+			public const int notification_media_cancel_action = 2130968627;
 			
 			// aapt resource value: 0x7f040034
-			public const int notification_template_big_media_custom = 2130968628;
+			public const int notification_template_big_media = 2130968628;
 			
 			// aapt resource value: 0x7f040035
-			public const int notification_template_big_media_narrow = 2130968629;
+			public const int notification_template_big_media_custom = 2130968629;
 			
 			// aapt resource value: 0x7f040036
-			public const int notification_template_big_media_narrow_custom = 2130968630;
+			public const int notification_template_big_media_narrow = 2130968630;
 			
 			// aapt resource value: 0x7f040037
-			public const int notification_template_custom_big = 2130968631;
+			public const int notification_template_big_media_narrow_custom = 2130968631;
 			
 			// aapt resource value: 0x7f040038
-			public const int notification_template_icon_group = 2130968632;
+			public const int notification_template_custom_big = 2130968632;
 			
 			// aapt resource value: 0x7f040039
-			public const int notification_template_lines_media = 2130968633;
+			public const int notification_template_icon_group = 2130968633;
 			
 			// aapt resource value: 0x7f04003a
-			public const int notification_template_media = 2130968634;
+			public const int notification_template_lines_media = 2130968634;
 			
 			// aapt resource value: 0x7f04003b
-			public const int notification_template_media_custom = 2130968635;
+			public const int notification_template_media = 2130968635;
 			
 			// aapt resource value: 0x7f04003c
-			public const int notification_template_part_chronometer = 2130968636;
+			public const int notification_template_media_custom = 2130968636;
 			
 			// aapt resource value: 0x7f04003d
-			public const int notification_template_part_time = 2130968637;
+			public const int notification_template_part_chronometer = 2130968637;
 			
 			// aapt resource value: 0x7f04003e
-			public const int select_dialog_item_material = 2130968638;
+			public const int notification_template_part_time = 2130968638;
 			
 			// aapt resource value: 0x7f04003f
-			public const int select_dialog_multichoice_material = 2130968639;
+			public const int select_dialog_item_material = 2130968639;
 			
 			// aapt resource value: 0x7f040040
-			public const int select_dialog_singlechoice_material = 2130968640;
+			public const int select_dialog_multichoice_material = 2130968640;
 			
 			// aapt resource value: 0x7f040041
-			public const int support_simple_spinner_dropdown_item = 2130968641;
+			public const int select_dialog_singlechoice_material = 2130968641;
 			
 			// aapt resource value: 0x7f040042
-			public const int Tabbar = 2130968642;
+			public const int support_simple_spinner_dropdown_item = 2130968642;
 			
 			// aapt resource value: 0x7f040043
-			public const int Toolbar = 2130968643;
+			public const int Tabbar = 2130968643;
+			
+			// aapt resource value: 0x7f040044
+			public const int Toolbar = 2130968644;
 			
 			static Layout()
 			{
@@ -5870,8 +5895,8 @@ namespace WebAtomsDemo.Droid
 			// aapt resource value: 0x7f0a0027
 			public const int abc_toolbar_collapse_description = 2131361831;
 			
-			// aapt resource value: 0x7f0a003f
-			public const int app_name = 2131361855;
+			// aapt resource value: 0x7f0a003e
+			public const int app_name = 2131361854;
 			
 			// aapt resource value: 0x7f0a0036
 			public const int appbar_scrolling_view_behavior = 2131361846;
@@ -5882,8 +5907,8 @@ namespace WebAtomsDemo.Droid
 			// aapt resource value: 0x7f0a0038
 			public const int character_counter_pattern = 2131361848;
 			
-			// aapt resource value: 0x7f0a003e
-			public const int hello = 2131361854;
+			// aapt resource value: 0x7f0a003f
+			public const int hello = 2131361855;
 			
 			// aapt resource value: 0x7f0a0000
 			public const int mr_button_content_description = 2131361792;
@@ -8354,6 +8379,24 @@ namespace WebAtomsDemo.Droid
 			
 			// aapt resource value: 1
 			public const int LinearLayoutCompat_Layout_android_layout_width = 1;
+			
+			public static int[] LiquidView = new int[] {
+					2130772309,
+					2130772310,
+					2130772311,
+					2130772312};
+			
+			// aapt resource value: 0
+			public const int LiquidView_liquidcore_URI = 0;
+			
+			// aapt resource value: 1
+			public const int LiquidView_liquidcore_argv = 1;
+			
+			// aapt resource value: 3
+			public const int LiquidView_liquidcore_surface = 3;
+			
+			// aapt resource value: 2
+			public const int LiquidView_liquidcore_surfaces = 2;
 			
 			public static int[] ListPopupWindow = new int[] {
 					16843436,

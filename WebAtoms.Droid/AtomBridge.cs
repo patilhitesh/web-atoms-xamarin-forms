@@ -11,36 +11,63 @@ using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
+    public class AppExceptionHandler : Java.Lang.Object, JSContext.IJSExceptionHandler
+    {
+        Action<JSException> action;
+        public AppExceptionHandler(Action<JSException> action)
+        {
+            this.action = action;
+        }
+
+        void JSContext.IJSExceptionHandler.Handle(JSException p0)
+        {
+            action(p0);
+        }
+    }
+
     public class AtomBridge: IJSService
     {
 
-        public JSContext engine = new JSContext();
+        public JSContext engine;
 
         public HttpClient client;
 
         public AtomBridge()
         {
-            client = new HttpClient();
-            engine.SetJSPropertyValue("global", engine);
-            engine.SetJSPropertyValue("document", null);
+            try
+            {
+                engine = new JSContext();
+                engine.SetExceptionHandler(new AppExceptionHandler((e) => {
+                    System.Diagnostics.Debug.WriteLine(e.ToString());
+                }));
 
-            // engine.Global.Put("global", engine.Global, false);
-            // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
-            // engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
+                client = new HttpClient();
+                // engine.SetJSPropertyValue("global", engine);
+                engine.SetJSPropertyValue("document", null);
 
-            // engine.Global.Put("document", Jint.Native.JsValue.Null, true);
-            // Execute("var global = {};");
-            var v8Bridge = engine.AddClrObject(this);
-            engine.SetJSPropertyValue("bridge", v8Bridge);
-            Execute("var console = {};");
-            Execute("console.log = function(l) { bridge.Log('log', l); };");
-            Execute("console.warn = function(l) { bridge.Log('warn', l); };");
-            Execute("console.error = function(l) { bridge.Log('error', l); };");
+                // engine.Global.Put("global", engine.Global, false);
+                // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
+                // engine.Global.Put("bridge", Jint.Native.JsValue.FromObject(engine, this), true);
 
-            Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i, false); };");
-            Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
-            Execute("var setTimeout = function(v,i){ return bridge.SetInterval(v,i, true); };");
-            Execute("var clearTimeout = clearInterval;");
+                // engine.Global.Put("document", Jint.Native.JsValue.Null, true);
+                // Execute("var global = {};");
+                var v8Bridge = engine.AddClrObject(this);
+                engine.SetJSPropertyValue("bridge", v8Bridge);
+                Execute("var console = {};");
+                Execute("console.log = function(l) { bridge.Log('log', l); };");
+                Execute("console.warn = function(l) { bridge.Log('warn', l); };");
+                Execute("console.error = function(l) { bridge.Log('error', l); };");
+
+                Execute("console.log('Started .... ');");
+
+                Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i, false); };");
+                Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
+                Execute("var setTimeout = function(v,i){ return bridge.SetInterval(v,i, true); };");
+                Execute("var clearTimeout = clearInterval;");
+            }
+            catch (Exception ex) {
+                throw;
+            }
         }
 
         private bool initialized = false;
@@ -53,17 +80,23 @@ namespace WebAtoms
             if (initialized)
                 return;
 
-            await ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js");
-            await ExecuteScriptAsync($"{url}/polyfills/endsWith.js");
-            await ExecuteScriptAsync($"{url}/polyfills/startsWith.js");
-            await ExecuteScriptAsync($"{url}/polyfills/includes.js");
+            try
+            {
+                //await ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js");
+                //await ExecuteScriptAsync($"{url}/polyfills/endsWith.js");
+                //await ExecuteScriptAsync($"{url}/polyfills/startsWith.js");
+                //await ExecuteScriptAsync($"{url}/polyfills/includes.js");
 
-            await ExecuteScriptAsync($"{url}/umd.js");
+                await ExecuteScriptAsync($"{url}/umd.js");
 
-            Execute("UMD.viewPrefix = 'xf';");
-            Execute("UMD.defaultApp = 'web-atoms-core/dist/xf/XFApp';");
-            Execute("AmdLoader.moduleLoader = function(n,u,s,e) { bridge.LoadModuleScript(n,u,s,e); }");
-            Execute("AmdLoader.moduleProgress= function(n,i) { bridge.ModuleProgress(n,i); }");
+                Execute("UMD.viewPrefix = 'xf';");
+                Execute("UMD.defaultApp = 'web-atoms-core/dist/xf/XFApp';");
+                Execute("AmdLoader.moduleLoader = function(n,u,s,e) { bridge.LoadModuleScript(n,u,s,e); }");
+                Execute("AmdLoader.moduleProgress= function(n,i) { bridge.ModuleProgress(n,i); }");
+            }
+            catch (Exception ex) {
+                throw;
+            }
         }
 
         public void ModuleProgress(string name, double progress) {

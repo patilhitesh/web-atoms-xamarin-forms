@@ -1,4 +1,5 @@
-﻿using Jint.Native;
+﻿
+using Org.Liquidplayer.Javascript;
 using System;
 using System.Reflection;
 
@@ -7,11 +8,11 @@ namespace WebAtoms
     public class AtomDelegate
     {
 
-        public JsValue callback;
+        public JSFunction callback;
 
         public void OnEvent(Object sender, Object arg)
         {
-            callback.Invoke(JsValue.FromObject(AtomBridge.Instance.engine, arg));
+            callback.Call((JSObject )arg.Wrap(callback.Context));
         }
 
         public static MethodInfo OnEventMethod = typeof(AtomDelegate).GetMethod("OnEvent");

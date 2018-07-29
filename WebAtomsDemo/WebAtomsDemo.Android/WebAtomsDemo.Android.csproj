@@ -46,6 +46,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Mono.Android" />
+    <Reference Include="Mono.Android.Export" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -98,6 +99,10 @@
     <ProjectReference Include="..\..\WebAtoms.Droid\WebAtoms.Droid.csproj">
       <Project>{cc9c8d18-6df2-46c7-ae8b-6386e692347f}</Project>
       <Name>WebAtoms.Droid</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\WebAtoms.LiquidCore\WebAtoms.LiquidCore.csproj">
+      <Project>{2f8d1056-cce3-48b6-81ef-ca0e2b1f725c}</Project>
+      <Name>WebAtoms.LiquidCore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="..\WebAtomsDemo\WebAtomsDemo.projitems" Label="Shared" />
