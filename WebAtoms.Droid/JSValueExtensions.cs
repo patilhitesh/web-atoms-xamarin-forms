@@ -10,6 +10,7 @@ using Android.Runtime;
 using Android.Views;
 using Android.Widget;
 using Org.Liquidplayer.Javascript;
+using Xamarin.Forms;
 
 namespace WebAtoms
 {
@@ -22,10 +23,56 @@ namespace WebAtoms
         }
 
         public object Target { get; }
+
+        internal T As<T>()
+        {
+            return (T)Target;
+        }
     }
 
     public static class JSValueExtensions
     {
+
+        public static JSValue Wrap(this object value, JSContext context) {
+            if (value == null)
+                return null;
+            if (value is JSValue jv)
+                return jv;
+            if (value is string s)
+                return new JSValue(context, s);
+            if (value is int i)
+                return new JSValue(context, i);
+            if (value is float f)
+                return new JSValue(context, f);
+            if (value is double d)
+                return new JSValue(context, d);
+            if (value is decimal dec)
+                return new JSValue(context, (double)dec);
+            if (value is bool b)
+                return new JSValue(context, b);
+            if (value is DateTime dt)
+                return dt.ToJSDate(context);
+            return new JSWrapper(context, value);
+        }
+
+        public static JSDate ToJSDate(this DateTime dateTime, JSContext context) {
+            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            long time = dateTime.Ticks - epoch.Ticks;
+            long ms = (long)(time / TimeSpan.TicksPerMillisecond);
+            return new JSDate(context, (Java.Lang.Long)ms);
+        }
+
+        public static DateTime ToDateTime(this JSDate date) {
+            return new DateTime(
+                (int)date.FullYear,
+                (int)date.Month,
+                (int)date.Day,
+                (int)date.Hours,
+                (int)date.Minutes,
+                (int)date.Seconds,
+                (int)date.Milliseconds,
+                DateTimeKind.Local);
+        }
 
         public static object ExecuteScript(this JSContext target, string script, string source, int line = 0) {
             return target.EvaluateScript(script, source, line);

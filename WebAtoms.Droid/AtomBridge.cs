@@ -96,16 +96,18 @@ namespace WebAtoms
             Execute(script, url);
         }
 
-        public void LoadContent(Element element, string content) {
+        public void LoadContent(JSWrapper elementTarget, string content) {
+            Element element = elementTarget.As<Element>();
             (element as Page).LoadFromXaml(content);
         }
 
-        public Element FindChild(Element root, string name)
+        public JSWrapper FindChild(JSWrapper rootTarget, string name)
         {
+            Element root = rootTarget.As<Element>();
             var item = root.FindByName<Element>(name);
             //var v = new ObjectReferenceWrapper(engine) {Target = item };
             //return v;
-            return item;
+            return (JSWrapper)item.Wrap(engine);
         }
 
         private Dictionary<int,System.Threading.CancellationTokenSource> intervalCancells = new Dictionary<int, System.Threading.CancellationTokenSource>();
@@ -127,7 +129,7 @@ namespace WebAtoms
                     try
                     {
                         await Task.Delay(TimeSpan.FromMilliseconds(milliSeconds), cancellation.Token);
-                        value.Call(nullValue, new V8Array(value.Rutime));
+                        value.Call(null, new Java.Lang.Object[] {  });
                         if (once) {
                             break;
                         }
@@ -151,7 +153,7 @@ namespace WebAtoms
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
-        public Element Create(string name)
+        public JSWrapper Create(string name)
         {
 
             types = types ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.DefinedTypes).ToList();
@@ -159,10 +161,11 @@ namespace WebAtoms
             var type = types.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
             Element view = Activator.CreateInstance(type) as Element;
-            return view;
+            return (JSWrapper)view.Wrap(engine);
         }
 
-        public void AttachControl(Element element, V8Object control) {
+        public void AttachControl(JSWrapper target, JSValue control) {
+            Element element = target.As<Element>();
             var ac = WAContext.GetAtomControl(element);
             if(ac != null)
             {
@@ -173,8 +176,12 @@ namespace WebAtoms
             WAContext.SetAtomControl(element, control);
         }
 
-        public IDisposable AddEventHandler(Element element, string name, V8Function callback, bool? capture)
+        public JSDisposable AddEventHandler(
+            JSWrapper elementTarget, 
+            string name, JSFunction callback, bool? capture)
         {
+            Element element = elementTarget.As<Element>();
+
             var e = element.GetType().GetEvent(name);
 
             var pe = new AtomDelegate() { callback = callback };
@@ -183,13 +190,14 @@ namespace WebAtoms
 
             e.AddEventHandler(element, handler);
 
-            return new AtomDisposable(() => {
+            return new JSDisposable(engine, () => {
                 e.RemoveEventHandler(element, handler);
                 pe.callback = null;
             });
         }
-        public IDisposable WatchProperty(object obj, string name, V8Function callback)
+        public JSDisposable WatchProperty(JSWrapper objTarget, string name, JSFunction callback)
         {
+            object obj = objTarget.Target;
             if (obj is INotifyPropertyChanged element)
             {
 
@@ -199,61 +207,66 @@ namespace WebAtoms
                 {
                     if (e.PropertyName == name)
                     {
-                        callback.Call( nullValue, V8ValueExtensions.ToV8Array(engine, pinfo.GetValue(obj)) );
+                        callback.Call( null, new Java.Lang.Object[] { new JSWrapper(engine, obj) } );
                     }
                 };
 
                 element.PropertyChanged += handler;
-                return new AtomDisposable(() =>
+                return new JSDisposable(engine, () =>
                 {
                     element.PropertyChanged -= handler;
                 });
             }
 
-            return EmptyDisposable.instance;
+            return new JSDisposable(engine, () => { });
         }
 
-        public object AtomParent(Element element, V8Object climbUp)
+        public JSValue AtomParent(JSWrapper target, JSValue climbUp)
         {
-            bool cu = !climbUp.IsUndefined && climbUp != null && climbUp.GetBoolean("");
+            Element element = target.As<Element>();
+            bool cu = !((bool)climbUp.IsUndefined()) && !((bool)climbUp.IsNull()) && (bool)climbUp.ToBoolean();
             do {
                 var e = WAContext.GetAtomControl(element);
                 if (e != null)
-                    return e;
+                    return e.Wrap(engine);
                 element = element.Parent;
             } while (cu && element != null);
             return null;
         }
 
-        public object ElementParent(Element element) {
-            return element.Parent;
+        public JSValue ElementParent(JSWrapper elementTarget) {
+            Element element = elementTarget.As<Element>();
+            return element.Parent?.Wrap(engine);
         }
 
-        public object TemplateParent(Element element) {
+        public JSValue TemplateParent(JSWrapper elementTarget) {
+            Element element = elementTarget.As<Element>();
             do {
                 var e = WAContext.GetTemplateParent(element);
                 if (e != null)
-                    return e;
+                    return e.Wrap(engine);
                 element = element.Parent;
             } while (element != null);
             return null;
         }
 
-        public void VisitDescendents(Element element, V8Function action)
+        public void VisitDescendents(JSWrapper target, JSFunction action)
         {
+            Element element = target.As<Element>();
             foreach (var e in (element as IElementController).LogicalChildren) {
                 var ac = WAContext.GetAtomControl(e);
-                var r = action.Call(null,
-
-                    JsValue.FromObject(engine,e), 
-                    (JsValue)ac);
-                if (r.IsUndefined() || r.IsNull() || !r.AsBoolean())
+                var child = e.Wrap(engine);
+                var r = action.Call(null, new Java.Lang.Object[] {
+                    child,
+                    (JSValue)ac});
+                if ((bool)r.IsUndefined() || (bool)r.IsNull() || !((bool)r.ToBoolean()))
                     continue;
-                VisitDescendents(e, action);
+                VisitDescendents( child as JSWrapper, action);
             }
         }
 
-        public void Dispose(Element e) {
+        public void Dispose(JSWrapper et) {
+            Element e = et.As<Element>();
             WAContext.SetAtomControl(e, null);
             WAContext.SetLogicalParent(e, null);
             WAContext.SetTemplateParent(e, null);
@@ -275,16 +288,19 @@ namespace WebAtoms
             }
         }
 
-        public object GetValue(Element view, string name) {
+        public JSValue GetValue(JSWrapper viewTarget, string name) {
+            Element view = viewTarget.As<Element>();
             var pv = view.GetProperty(name);
             var value = pv.GetValue(view);
-            return value;
+            return value.Wrap(engine);
             // return null;
         }
 
-        public void SetValue(Element view, string name, JsValue value) {
+        public void SetValue(JSWrapper target, string name, JSValue value) {
 
-            bool isNull = value.IsNull() || value.IsUndefined();
+            Element view = target.As<Element>();
+
+            bool isNull = (bool)value.IsNull() || (bool)value.IsUndefined();
 
             var pv = view.GetProperty(name);
 
@@ -298,25 +314,25 @@ namespace WebAtoms
 
 
             if (pt == typeof(string)) {
-                pv.SetValue(view, value.AsString());
+                pv.SetValue(view, value.ToString());
                 return;
             }
 
             // check if it is an array
-            if (value.IsArray()) {
+            if (value is JSBaseArray array) {
                 var old = pv.GetValue(view);
                 if (old is IDisposable d) {
                     d.Dispose();
                 }
-                pv.SetValue(view, new AtomEnumerable(value.AsArray()));
+                pv.SetValue(view, new AtomEnumerable(array));
                 return;
             }
 
             pt = Nullable.GetUnderlyingType(pt) ?? pt;
 
-            if (value.IsDate()) {
+            if (value is JSDate date) {
                 // conver to datetime and set...
-                pv.SetValue(view, value.AsDate().ToDateTime());
+                pv.SetValue(view, date.ToDateTime());
                 return;
             }
 
@@ -353,22 +369,22 @@ namespace WebAtoms
             return url + path + ".js";
         }
 
-        public void LoadModuleScript(string name, string url, JsValue success, JsValue error) {
+        public void LoadModuleScript(string name, string url, JSFunction success, JSFunction error) {
             Device.BeginInvokeOnMainThread(async () => {
                 try {
 
                     string script = await client.GetStringAsync(url);
 
-                    success.Invoke(new ClrFunctionInstance(engine, (_this, args) =>
+                    success.Call(null, new Java.Lang.Object[] {new JSClrFunction(engine, (args) =>
                     {
 
                         Execute(script, url);
 
-                        return JsValue.Undefined;
-                    }));
-                } catch (Jint.Runtime.JavaScriptException ex) {
-                    System.Diagnostics.Debug.WriteLine($"{ex.LineNumber} {ex.ToString()}");
-                    error.Invoke(JsValue.Null, new JsString(ex.ToString()));
+                        return new JSValue(engine);
+                    }) });
+                } catch (JSException ex) {
+                    System.Diagnostics.Debug.WriteLine($"{ex.Stack()} {ex.ToString()}");
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() + "\r\n" + ex.Stack() });
                 }
 
             });

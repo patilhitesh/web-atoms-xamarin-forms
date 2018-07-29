@@ -1,7 +1,4 @@
-﻿using Jint.Native;
-using Jint.Native.Array;
-using Jint.Native.Number;
-using Jint.Runtime.Interop;
+﻿using Org.Liquidplayer.Javascript;
 using System;
 using System.Collections;
 using System.Collections.Specialized;
@@ -15,27 +12,27 @@ namespace WebAtoms
         INotifyCollectionChanged, 
         IDisposable
     {
-        readonly ArrayInstance array;
-        JsValue disposable;
+        JSObject disposable;
+        JSBaseArray array;
 
-        public AtomEnumerable(ArrayInstance array)
+        public AtomEnumerable(JSBaseArray array)
         {
             this.array = array;
 
-            var watch = this.array.Get("watch");
+            var watch = this.array.GetJSPropertyValue("watch") as JSFunction;
 
-            var clrFunc = new ClrFunctionInstance(array.Engine, (_this, plist) => {
+            var clrFunc = new JSClrFunction(array.Context, (plist) => {
                 CollectionChanged?.Invoke(this, CreateEventArgs(plist));
-                return JsValue.Undefined;
+                return new JSValue(array.Context);
             });
 
-            this.disposable = watch.Invoke(clrFunc);
+            this.disposable = (JSObject)watch.Call(null, new Java.Lang.Object[] { clrFunc });
         }
 
-        NotifyCollectionChangedEventArgs CreateEventArgs(JsValue[] plist)
+        NotifyCollectionChangedEventArgs CreateEventArgs(object[] plist)
         {
-            var mode = (plist[0] as JsString).ToString();
-            var index = (int)(plist[1] as JsNumber).ToObject();
+            var mode = plist[0].ToString();
+            var index = (plist[1] as JSValue).ToNumber().IntValue();
 
             switch (mode) {
                 case "refresh":
@@ -54,13 +51,14 @@ namespace WebAtoms
 
         public void Dispose()
         {
-            disposable?.Invoke();
+            (disposable?.GetJSPropertyValue("dispose") as JSFunction)
+                ?.Call(null);
         }
 
         public IEnumerator GetEnumerator()
         {
-            for (var i = 0; i < array.GetLength(); i++) {
-                yield return array.Get($"{i}").AsObject();
+            for (var i = 0; i < array.Size(); i++) {
+                yield return array.Get(i);
             }    
         }
     }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Org.Liquidplayer.Javascript;
+using System;
 
 namespace WebAtoms
 {
@@ -15,6 +16,21 @@ namespace WebAtoms
         {
             action?.Invoke();
         }
+    }
+
+    public class JSDisposable : JSObject {
+
+        public JSDisposable(JSContext context, Action action): base(context)
+        {
+            JSClrFunction a = new JSClrFunction(context, (aa) => {
+                action();
+                return new JSValue(context);
+            });
+
+            this.SetJSPropertyValue("dispose", a);
+        }
+
+
     }
 
 }
