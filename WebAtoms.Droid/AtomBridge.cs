@@ -42,6 +42,7 @@ namespace WebAtoms
                 }));
 
                 client = new HttpClient();
+                engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
                 // engine.SetJSPropertyValue("global", engine);
                 engine.SetJSPropertyValue("document", null);
 
@@ -388,7 +389,7 @@ namespace WebAtoms
                 var relUrl = new Uri(item, UriKind.Relative);
                 var absUrl = new Uri(currentUrl, relUrl);
                 var s = absUrl.ToString() + ".js";
-                Log($"Resolve(\"{baseUrl}\",\"{item}\") = \"{s}\"");
+                Log("Info", new JSValue(engine, $"Resolve(\"{baseUrl}\",\"{item}\") = \"{s}\""));
                 return s;
             }
 
@@ -498,7 +499,7 @@ namespace WebAtoms
 
         public Action<object> OnLog = l => { System.Diagnostics.Debug.WriteLine(l); };
 
-        public void Log(object a) {
+        public void LogObject(object a) {
             OnLog(a);
         }
 

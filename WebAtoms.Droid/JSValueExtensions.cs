@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 
 using Android.App;
@@ -56,6 +57,61 @@ namespace WebAtoms
             return new JSWrapper(context, value);
         }
 
+        public static object ToType(this JSValue value, Type type) {
+            if (type == typeof(int))
+            {
+                if (value == null)
+                    return 0;
+                return value.ToNumber().IntValue();
+            }
+            if (type == typeof(short))
+            {
+                if (value == null)
+                    return 0;
+                return value.ToNumber().ShortValue();
+            }
+            if (type == typeof(float))
+            {
+                if (value == null)
+                    return 0;
+                return value.ToNumber().FloatValue();
+            }
+            if (type == typeof(double))
+            {
+                if (value == null)
+                    return 0;
+                return value.ToNumber().DoubleValue();
+            }
+            if (type == typeof(bool))
+            {
+                if (value == null)
+                    return 0;
+                return (bool)value.ToBoolean();
+            }
+            if (type == typeof(DateTime)) {
+                if (value == null)
+                    return DateTime.MinValue;
+                return (value as JSDate).ToDateTime();
+            }
+            if (value == null) {
+                return null;
+            }
+            if (type == typeof(string)) {
+                return value.ToString();
+            }
+            if (value is JSArray j) {
+                // type is IList...
+                var list = Activator.CreateInstance(type) as System.Collections.IList;
+                for (int i = 0; i < j.Size(); i++)
+                {
+                    Type itemType = type.GetGenericArguments()[0];
+                    list[i] = (j.Get(i) as JSValue).ToType(itemType);
+                }
+                return list;
+            }
+            return null;
+        }
+
         public static JSDate ToJSDate(this DateTime dateTime, JSContext context) {
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
             long time = dateTime.Ticks - epoch.Ticks;
@@ -89,26 +145,39 @@ namespace WebAtoms
         }
 
         public static JSValue AddClrObject(this JSObject target, IJSService value) {
+            JSContext context = target.Context;
+            var jobj = new JSObject(context);
 
-            var jobj = new JSObject(target.Context);
+            context.SetJSPropertyValue("__clr__obj", jobj);
 
 
-            foreach (var item in value.GetType().GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance))
+            var methods = value
+                .GetType()
+                .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
+                .ToList();
+            foreach (var item in methods)
             {
                 try
                 {
-                    JSClrFunction clrFunction = new JSClrFunction(target.Context, (x) =>
+                    JSClrFunction clrFunction = new JSClrFunction(context, (x) =>
                     {
-
-                        return item.Invoke(value, x);
+                        // map parameters
+                        return item.Invoke(value, 
+                            item
+                                .GetParameters()
+                                .Select( (p,i) => (x[i] is JSValue jv) ? jv.ToType(p.ParameterType) : null  ).ToArray());
                     });
 
-                    jobj.InvokeProperty(item.Name, clrFunction);
+                    jobj.InvokeProperty($"__{item.Name}", clrFunction);
+                    var r = context.ExecuteScript($"__paramArrayToArrayParam(__clr__obj,__clr__obj.__{item.Name})", "AddClrObject", 0);
+                    jobj.InvokeProperty(item.Name, (Java.Lang.Object)r);
                 }
                 catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
                     throw;
                 }
             }
+
 
             return jobj;
 
@@ -137,10 +206,16 @@ namespace WebAtoms
             return m;
         }
 
-        //[Register("runAction", "([Ljava/lang/object;)Ljava/lang/Object;", "GetAddHandler")]
         [Export("runAction")]
         public Java.Lang.Object RunAction(JSArray args) {
-            return runFunction(args.ToArray())?.Wrap(this.Context);
+            try
+            {
+                return runFunction(args?.ToArray())?.Wrap(this.Context);
+            }
+            catch (Exception ex) {
+                Context.ThrowJSException(new JSException(Context, ex.ToString()));
+                return null;
+            }
         }
 
     }

@@ -22,9 +22,9 @@ namespace WebAtomsDemo
 
             var engine = AtomBridge.Instance.engine;
 
-            var amdLoader = "http://192.168.0.105:8081";
+            var amdLoader = "http://192.168.1.117:8081";
 
-            var webAtomsCore = "http://192.168.0.105:8080";
+            var webAtomsCore = "http://192.168.1.117:8080";
             //var webAtomsCore = "https://cdn.jsdelivr.net/npm/web-atoms-core@1.0.41/";
 
             AtomBridge.Instance.ModuleUrls["web-atoms-core"] = webAtomsCore;
