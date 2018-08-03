@@ -138,9 +138,16 @@ namespace WebAtoms
         }
 
         public async Task ExecuteScriptAsync(string url) {
-//            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
-            string script = await client.GetStringAsync(url);
-            Execute(script, url);
+            //            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
+            try
+            {
+                string script = await client.GetStringAsync(url);
+                Execute(script, url);
+            }
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine($"Failed to load url {url}\r\n{ex}");
+                throw;
+            }
         }
 
         public void LoadContent(JSWrapper elementTarget, string content) {
@@ -443,9 +450,15 @@ namespace WebAtoms
 
                         return new JSValue(engine);
                     }) });
-                } catch (JSException ex) {
-                    System.Diagnostics.Debug.WriteLine($"{ex.Stack()} {ex.ToString()}");
-                    error.Call(null, new Java.Lang.Object[] { ex.ToString() + "\r\n" + ex.Stack() });
+                }
+                catch (JSException ex) {
+                    var msg = $"Failed to load url {url}\r\n{ex.Stack()}\r\n{ex}";
+                    System.Diagnostics.Debug.WriteLine(msg);
+                    error.Call(null, new Java.Lang.Object[] { msg });
+                } catch (Exception ex) {
+                    var msg = $"Failed to load url {url}\r\n{ex}";
+                    System.Diagnostics.Debug.WriteLine(msg);
+                    error.Call(null, new Java.Lang.Object[] { msg });
                 }
 
             });
