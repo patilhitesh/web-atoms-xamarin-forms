@@ -38,7 +38,10 @@ namespace WebAtoms
                 return new JSValue(context, b);
             if (value is DateTime dt)
                 return dt.ToJSDate(context);
-            return new JSWrapper(context, value);
+            if (value is JSWrapper w) {
+                return new JSValue(context, w.Key);
+            }
+            return new JSValue(context, JSWrapper.Register(value).Key);
         }
 
         public static object ToType(this JSValue value, Type type) {
@@ -87,7 +90,7 @@ namespace WebAtoms
                 return value.ToFunction();
             }
             if (type == typeof(JSWrapper)) {
-                return value.ToObject();
+                return JSWrapper.FromKey(value.ToString());
             }
             if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
                 return value;

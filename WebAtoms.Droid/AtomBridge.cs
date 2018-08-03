@@ -148,13 +148,13 @@ namespace WebAtoms
             (element as Page).LoadFromXaml(content);
         }
 
-        public JSWrapper FindChild(JSWrapper rootTarget, string name)
+        public Element FindChild(JSWrapper rootTarget, string name)
         {
             Element root = rootTarget.As<Element>();
             var item = root.FindByName<Element>(name);
             //var v = new ObjectReferenceWrapper(engine) {Target = item };
             //return v;
-            return (JSWrapper)item.Wrap(engine);
+            return item;
         }
 
         private Dictionary<int,System.Threading.CancellationTokenSource> intervalCancells = new Dictionary<int, System.Threading.CancellationTokenSource>();
@@ -200,7 +200,7 @@ namespace WebAtoms
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
-        public JSWrapper Create(string name)
+        public Element Create(string name)
         {
 
             types = types ?? AppDomain.CurrentDomain.GetAssemblies()
@@ -215,7 +215,7 @@ namespace WebAtoms
             var type = types.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
             Element view = Activator.CreateInstance(type) as Element;
-            return (JSWrapper)view.Wrap(engine);
+            return view;
         }
 
         public void AttachControl(JSWrapper target, JSValue control) {
@@ -261,7 +261,7 @@ namespace WebAtoms
                 {
                     if (e.PropertyName == name)
                     {
-                        callback.Call( null, new Java.Lang.Object[] { new JSWrapper(engine, obj) } );
+                        callback.Call( null, new Java.Lang.Object[] { obj.Wrap(engine) } );
                     }
                 };
 
@@ -304,9 +304,16 @@ namespace WebAtoms
             return null;
         }
 
+        public void SetRoot(JSWrapper wrapper) {
+            WAContext.Current.CurrentPage = wrapper.As<Page>();
+        }
+
         public void VisitDescendents(JSWrapper target, JSFunction action)
         {
-            Element element = target.As<Element>();
+            Element element = target?.As<Element>();
+            if (element == null) {
+                throw new ObjectDisposedException("Cannot visit descendents of null");
+            }
             foreach (var e in (element as IElementController).LogicalChildren) {
                 var ac = WAContext.GetAtomControl(e);
                 var child = e.Wrap(engine);
@@ -315,7 +322,7 @@ namespace WebAtoms
                     (JSValue)ac});
                 if ((bool)r.IsUndefined() || (bool)r.IsNull() || !((bool)r.ToBoolean()))
                     continue;
-                VisitDescendents( child as JSWrapper, action);
+                VisitDescendents(JSWrapper.Register(e), action);
             }
         }
 

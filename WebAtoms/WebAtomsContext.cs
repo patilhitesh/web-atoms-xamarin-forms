@@ -85,6 +85,26 @@ namespace WebAtoms
                 typeof(WAContext),
                 null);
         #endregion
+
+        #region JSRefKey
+        public static string GetJSRefKey(BindableObject obj)
+        {
+            return (string)obj.GetValue(JSRefKeyProperty);
+        }
+
+        public static void SetJSRefKey(BindableObject obj, string value)
+        {
+            obj.SetValue(JSRefKeyProperty, value);
+        }
+
+        // Using a DependencyProperty as the backing store for AtomControl.  This enables animation, styling, binding, etc...
+        public static readonly BindableProperty JSRefKeyProperty =
+            BindableProperty.CreateAttached(
+                "JSRefKey",
+                typeof(string),
+                typeof(WAContext),
+                null);
+        #endregion
     }
 
 }
