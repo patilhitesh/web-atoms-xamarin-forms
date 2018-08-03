@@ -56,6 +56,7 @@
     <Compile Include="EmptyDisposable.cs" />
     <Compile Include="IJSObject.cs" />
     <Compile Include="JSValueExtensions.cs" />
+    <Compile Include="JSWrapper.cs" />
     <Compile Include="ObjectReferenceWrapper.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

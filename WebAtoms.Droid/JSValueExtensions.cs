@@ -16,22 +16,6 @@ using Xamarin.Forms;
 
 namespace WebAtoms
 {
-
-    public class JSWrapper : JSValue {
-
-        public JSWrapper(JSContext c, Object target): base(c, (Java.Lang.Object) target)
-        {
-            this.Target = target;
-        }
-
-        public object Target { get; }
-
-        internal T As<T>()
-        {
-            return (T)Target;
-        }
-    }
-
     public static class JSValueExtensions
     {
 
@@ -99,6 +83,15 @@ namespace WebAtoms
             if (type == typeof(string)) {
                 return value.ToString();
             }
+            if (type == typeof(JSFunction) || type.IsSubclassOf(typeof(JSFunction))) {
+                return value.ToFunction();
+            }
+            if (type == typeof(JSWrapper)) {
+                return value.ToObject();
+            }
+            if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
+                return value;
+
             if (value is JSArray j) {
                 // type is IList...
                 var list = Activator.CreateInstance(type) as System.Collections.IList;
@@ -144,6 +137,10 @@ namespace WebAtoms
             return target.InvokeProperty(name);
         }
 
+        public static string ToCamelCase(this string text) {
+            return Char.ToLower(text[0]) + text.Substring(1);
+        }
+
         public static JSValue AddClrObject(this JSObject target, IJSService value) {
             JSContext context = target.Context;
             var jobj = new JSObject(context);
@@ -170,7 +167,7 @@ namespace WebAtoms
 
                     jobj.InvokeProperty($"__{item.Name}", clrFunction);
                     var r = context.ExecuteScript($"__paramArrayToArrayParam(__clr__obj,__clr__obj.__{item.Name})", "AddClrObject", 0);
-                    jobj.InvokeProperty(item.Name, (Java.Lang.Object)r);
+                    jobj.InvokeProperty(item.Name.ToCamelCase(), (Java.Lang.Object)r);
                 }
                 catch (Exception ex) {
                     System.Diagnostics.Debug.WriteLine(ex.ToString());

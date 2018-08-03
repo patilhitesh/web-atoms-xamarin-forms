@@ -2,8 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.Http;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Forms;
@@ -38,7 +40,14 @@ namespace WebAtoms
             {
                 engine = new JSContext();
                 engine.SetExceptionHandler(new AppExceptionHandler((e) => {
-                    System.Diagnostics.Debug.WriteLine(e.ToString());
+                    if (e.Error != null)
+                    {
+                        System.Diagnostics.Debug.WriteLine($"{e.Error.Message()}\r\n{e.Error.Stack()}");
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine(e.ToString());
+                    }
                 }));
 
                 client = new HttpClient();
@@ -55,15 +64,15 @@ namespace WebAtoms
                 var v8Bridge = engine.AddClrObject(this);
                 engine.SetJSPropertyValue("bridge", v8Bridge);
                 Execute("var console = {};");
-                Execute("console.log = function(l) { bridge.Log('log', l); };");
-                Execute("console.warn = function(l) { bridge.Log('warn', l); };");
-                Execute("console.error = function(l) { bridge.Log('error', l); };");
+                Execute("console.log = function(l) { bridge.log('log', l); };");
+                Execute("console.warn = function(l) { bridge.log('warn', l); };");
+                Execute("console.error = function(l) { bridge.log('error', l); };");
 
                 Execute("console.log('Started .... ');");
 
-                Execute("var setInterval = function(v,i){ return bridge.SetInterval(v,i, false); };");
-                Execute("var clearInterval = function(i){ bridge.ClearInterval(i); };");
-                Execute("var setTimeout = function(v,i){ return bridge.SetInterval(v,i, true); };");
+                Execute("var setInterval = function(v,i){ return bridge.setInterval(v,i, false); };");
+                Execute("var clearInterval = function(i){ bridge.clearInterval(i); };");
+                Execute("var setTimeout = function(v,i){ return bridge.setInterval(v,i, true); };");
                 Execute("var clearTimeout = clearInterval;");
             }
             catch (Exception ex) {
@@ -74,6 +83,10 @@ namespace WebAtoms
         private bool initialized = false;
 
         public void Log(string title, JSValue text) {
+            //if (title != "log")
+            //{
+            //    Debugger.Break();
+            //}
             System.Diagnostics.Debug.WriteLine($"{title}: {text}");
         }
 
@@ -92,8 +105,8 @@ namespace WebAtoms
 
                 Execute("UMD.viewPrefix = 'xf';");
                 Execute("UMD.defaultApp = 'web-atoms-core/dist/xf/XFApp';");
-                Execute("AmdLoader.moduleLoader = function(n,u,s,e) { bridge.LoadModuleScript(n,u,s,e); }");
-                Execute("AmdLoader.moduleProgress= function(n,i) { bridge.ModuleProgress(n,i); }");
+                Execute("AmdLoader.moduleLoader = function(n,u,s,e) { bridge.loadModuleScript(n,u,s,e); }");
+                Execute("AmdLoader.moduleProgress= function(n,i) { bridge.moduleProgress(n,i); }");
             }
             catch (Exception ex) {
                 throw;
@@ -190,7 +203,14 @@ namespace WebAtoms
         public JSWrapper Create(string name)
         {
 
-            types = types ?? AppDomain.CurrentDomain.GetAssemblies().SelectMany(x => x.DefinedTypes).ToList();
+            types = types ?? AppDomain.CurrentDomain.GetAssemblies()
+                .SelectMany<System.Reflection.Assembly, System.Reflection.TypeInfo>(x => {
+                    try {
+                        return x.ExportedTypes.Select(t => t.GetTypeInfo());
+                    }
+                    catch { }
+                    return new System.Reflection.TypeInfo[] { };
+                }).ToList();
 
             var type = types.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
