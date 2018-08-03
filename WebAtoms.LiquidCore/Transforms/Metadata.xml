@@ -1,0 +1,45 @@
+﻿<metadata>
+  <!--
+  This sample removes the class: android.support.v4.content.AsyncTaskLoader.LoadTask:
+  <remove-node path="/api/package[@name='android.support.v4.content']/class[@name='AsyncTaskLoader.LoadTask']" />
+  
+  This sample removes the method: android.support.v4.content.CursorLoader.loadInBackground:
+  <remove-node path="/api/package[@name='android.support.v4.content']/class[@name='CursorLoader']/method[@name='loadInBackground']" />
+  -->
+  <!--<attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSBoolean']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSContext']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSContextGroup']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSException']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSFunction']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSNull']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSNumber']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSObject']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSPrimitive']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSUndefined']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIJSValue']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNILoopPreserverr']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JNIObject']" name="visibility">public</attr>-->
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSArray']/constructor[@name='JSArray' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSArray']/constructor[@name='JSArray' and count(parameter)=3 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext'] and parameter[3][@type='java.lang.Class&lt;T&gt;']]"/>
+
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSFloat64Array']/constructor[@name='JSFloat64Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSFloat32Array']/constructor[@name='JSFloat32Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSFunction']/constructor[@name='JSFunction' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSInt16Array']/constructor[@name='JSInt16Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSInt8Array']/constructor[@name='JSInt8Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSInt32Array']/constructor[@name='JSInt32Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSTypedArray']/constructor[@name='JSTypedArray' and count(parameter)=3 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext'] and parameter[3][@type='java.lang.Class&lt;T&gt;']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSValue']/constructor[@name='JSValue' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSValue'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSValue']/field[@name='valueRef']"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSObject']/constructor[@name='JSObject' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSUint16Array']/constructor[@name='JSUint16Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSUint32Array']/constructor[@name='JSUint32Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSUint8Array']/constructor[@name='JSUint8Array' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <remove-node path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSUint8ClampedArray']/constructor[@name='JSUint8ClampedArray' and count(parameter)=2 and parameter[1][@type='org.liquidplayer.javascript.JNIJSObject'] and parameter[2][@type='org.liquidplayer.javascript.JSContext']]"/>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSObjectWrapper']" name="visibility">public</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSObjectPropertiesMap']/method[@name='entrySet']"
+      name="managedName">EntrySetGenerated</attr>
+  <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSObjectPropertiesMap.SetIterator']/method[@name='next']"
+      name="managedReturn">Java.Lang.Object</attr>
+</metadata>
