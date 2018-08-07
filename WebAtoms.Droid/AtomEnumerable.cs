@@ -19,14 +19,16 @@ namespace WebAtoms
         {
             this.array = array;
 
-            var watch = this.array.GetJSPropertyValue("watch") as JSFunction;
+            var watch = this.array.GetJSPropertyValue("watch").ToFunction();
 
             var clrFunc = new JSClrFunction(array.Context, (plist) => {
                 CollectionChanged?.Invoke(this, CreateEventArgs(plist));
-                return new JSValue(array.Context);
+                return null;
             });
 
-            this.disposable = (JSObject)watch.Call(null, new Java.Lang.Object[] { clrFunc });
+            var retValue = watch.Call(array, (Java.Lang.Object)clrFunc);
+
+            this.disposable = retValue.ToObject();
         }
 
         NotifyCollectionChangedEventArgs CreateEventArgs(object[] plist)
@@ -52,7 +54,7 @@ namespace WebAtoms
         public void Dispose()
         {
             (disposable?.GetJSPropertyValue("dispose") as JSFunction)
-                ?.Call(null);
+                ?.Call(array);
         }
 
         public IEnumerator GetEnumerator()

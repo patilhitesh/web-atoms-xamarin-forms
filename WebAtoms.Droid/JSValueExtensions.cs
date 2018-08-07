@@ -92,10 +92,13 @@ namespace WebAtoms
             if (type == typeof(JSWrapper)) {
                 return JSWrapper.FromKey(value.ToString());
             }
-            if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
-                return value;
 
             if (value is JSArray j) {
+
+                if (type == typeof(System.Collections.IEnumerable)) {
+                    return new AtomEnumerable(j);
+                }
+
                 // type is IList...
                 var list = Activator.CreateInstance(type) as System.Collections.IList;
                 for (int i = 0; i < j.Size(); i++)
@@ -105,6 +108,8 @@ namespace WebAtoms
                 }
                 return list;
             }
+            if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
+                return value;
             return null;
         }
 

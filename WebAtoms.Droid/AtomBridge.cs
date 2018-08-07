@@ -151,8 +151,22 @@ namespace WebAtoms
         }
 
         public void LoadContent(JSWrapper elementTarget, string content) {
-            Element element = elementTarget.As<Element>();
-            (element as Page).LoadFromXaml(content);
+            try
+            {
+                Element element = elementTarget.As<Element>();
+                if (element is View v)
+                {
+                    v.LoadFromXaml(content);
+                }
+                else if (element is Page p) {
+                    p.LoadFromXaml(content);
+                }
+                // (element as View).LoadFromXaml(content);
+            }
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine(ex);
+                throw;
+            }
         }
 
         public Element FindChild(JSWrapper rootTarget, string name)
@@ -231,6 +245,31 @@ namespace WebAtoms
             var client = this.client;
             var service = AjaxService.Instance;
             service.Invoke(client, url, ajaxOptions, success, failed, progress);
+        }
+
+        public void SetTemplate(JSWrapper elementWrapper, string name, JSFunction factory) {
+            var element = elementWrapper.As<Element>();
+            PropertyInfo p = element.GetType().GetProperty(name);
+            p.SetValue(element, new DataTemplate(() => {
+                try
+                {
+                    var ac = (factory.Call(null) as JSValue).ToObject();
+                    var eid = ac.GetJSPropertyValue("element");
+                    var e = JSWrapper.FromKey(eid.ToString()).As<View>();
+                    return new TemplateView
+                    {
+                        View = e,
+                        SetBindingContext = (obj) =>
+                        {
+                            ac.SetJSPropertyValue("data", (Java.Lang.Object)obj);
+                        }
+                    };
+                }
+                catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    throw;
+                }
+            }));
         }
 
         public void PushPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
@@ -431,11 +470,12 @@ namespace WebAtoms
             }
 
             // check if it is an array
-            if (value is JSBaseArray array) {
+            if ((bool)value.IsArray()) {
                 var old = pv.GetValue(view);
                 if (old is IDisposable d) {
                     d.Dispose();
                 }
+                var array = value.ToJSArray();
                 pv.SetValue(view, new AtomEnumerable(array));
                 return;
             }

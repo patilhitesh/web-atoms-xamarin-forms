@@ -107,4 +107,21 @@ namespace WebAtoms
         #endregion
     }
 
+    public class TemplateView: ViewCell {
+
+        public TemplateView()
+        {
+
+        }
+
+        public Action<object> SetBindingContext { get; set; }
+
+        protected override void OnBindingContextChanged()
+        {
+            base.OnBindingContextChanged();
+            this.SetBindingContext?.Invoke(this.BindingContext);
+        }
+
+    }
+
 }
