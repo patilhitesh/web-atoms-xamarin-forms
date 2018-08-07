@@ -155,6 +155,9 @@ namespace WebAtoms
                 .GetType()
                 .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                 .ToList();
+
+            var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
             foreach (var item in methods)
             {
                 try
@@ -177,8 +180,6 @@ namespace WebAtoms
                     throw;
                 }
             }
-
-
             return jobj;
 
         }

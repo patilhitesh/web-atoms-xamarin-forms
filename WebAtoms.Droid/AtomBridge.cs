@@ -198,12 +198,56 @@ namespace WebAtoms
             }
         }
 
-        public Dictionary<string, string> ModuleUrls = new Dictionary<string, string>();
+        public void Alert(string message, string title, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try
+                {
+                    await Application.Current.MainPage.DisplayAlert(title, message, "Ok");
+                    success.Call(null, new Java.Lang.Object[] { });
+                }
+                catch (Exception ex)
+                {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
+        public void Confirm(string message, string title, JSFunction success, JSFunction error)
+        {
+            Device.BeginInvokeOnMainThread(async () => {
+                try
+                {
+                    bool result = await Application.Current.MainPage.DisplayAlert(title, message, "Yes", "No");
+                    success.Call(null, new Java.Lang.Object[] { result });
+                }
+                catch (Exception ex)
+                {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
+        public void Ajax(string url, JSObject ajaxOptions, JSFunction success, JSFunction failed, JSFunction progress) {
+            var client = this.client;
+            var service = AjaxService.Instance;
+            service.Invoke(client, url, ajaxOptions, success, failed, progress);
+        }
+
+        public void PushPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try
+                {
+                    var e = wrapper.As<Page>();
+                    await Application.Current.MainPage.Navigation.PushAsync(e, true);
+                    success.Call(null, new Java.Lang.Object[] { });
+                }
+                catch (Exception ex) {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
 
         public static AtomBridge Instance = new AtomBridge();
-
-        public string BaseUrl = "";
-
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
@@ -416,27 +460,6 @@ namespace WebAtoms
             }
         }
 
-        public string ResolveName(string baseUrl, string item) {
-            if (item.StartsWith("."))
-            {
-                var currentUrl = new Uri(baseUrl);
-                var relUrl = new Uri(item, UriKind.Relative);
-                var absUrl = new Uri(currentUrl, relUrl);
-                var s = absUrl.ToString() + ".js";
-                Log("Info", new JSValue(engine, $"Resolve(\"{baseUrl}\",\"{item}\") = \"{s}\""));
-                return s;
-            }
-
-            var tokens = item.Split('/');
-
-            var packageName = tokens.First();
-            var path = string.Join("/", tokens.Skip(1));
-
-            var url = this.ModuleUrls[packageName];
-
-            return url + path + ".js";
-        }
-
         public void LoadModuleScript(string name, string url, JSFunction success, JSFunction error) {
             Device.BeginInvokeOnMainThread(async () => {
                 try {
@@ -463,87 +486,6 @@ namespace WebAtoms
 
             });
         }
-
-        //public async Task ExecuteScriptAsync(string item) {
-        //    using (var client = new HttpClient())
-        //    {
-
-        //        try
-        //        {
-
-        //            Log($"Downloading {item}");
-        //            var script = await client.GetStringAsync(item);
-        //            Log($"Executing {item}");
-        //            BaseUrl = item;
-        //            //Execute(script, new Jint.Parser.ParserOptions {
-        //            //    Source = item
-        //            //});
-        //            Execute(script, new Esprima.ParserOptions(item) {
-        //                 SourceType = SourceType.Script
-        //            });
-        //        }
-        //        catch (Exception ex) {
-        //            Log($"Failed: {item}");
-        //            Log(ex);
-        //            throw;
-        //        }
-        //    }
-        //}
-
-        //public void AppLoaded(JsValue require, JsValue exports) {
-
-        //    try
-        //    {
-        //        //Jint.Native.Object.ObjectConstructor oc = exports.AsObject().GetProperty("App").Value.AsObject() as Jint.Native.Object.ObjectConstructor;
-        //        //var appObject = oc.Construct(new JsValue[] { });
-
-        //        //appObject.GetProperty("main").Value.Invoke();
-
-        //        engine.Global.Put("_require", require, true);
-        //        engine.Global.Put("_exports", exports, true);
-
-        //        Execute($"var appBridge = _require('web-atoms-core/bin/core/bridge');");
-        //        Execute($"appBridge.AtomBridge.instance = bridge;");
-
-        //        Execute($"var app = new _exports.App();" +
-        //            $"app.main();");
-
-
-        //        Log("App loaded");
-        //    }
-        //    catch (Exception ex) {
-        //        Log(ex);
-
-        //    }
-        //}
-
-        //public void ExecuteScript(string item, JsValue callback) {
-        //    Device.BeginInvokeOnMainThread(async () => {
-
-        //        await ExecuteScriptAsync(item);
-
-        //        try
-        //        {
-        //            if (callback != null)
-        //            {
-        //                callback.Invoke();
-        //            }
-        //        }
-        //        catch (Exception ex) {
-        //            Log(ex);
-        //        }
-                
-        //    });
-        //}
-
-
-        public Action<object> OnLog = l => { System.Diagnostics.Debug.WriteLine(l); };
-
-        public void LogObject(object a) {
-            OnLog(a);
-        }
-
-
 
     }
 }
