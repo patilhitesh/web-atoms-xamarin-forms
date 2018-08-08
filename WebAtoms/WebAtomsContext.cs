@@ -23,6 +23,14 @@ namespace WebAtoms
             }
         }
 
+        public INavigation Navigation {
+            get {
+                var page = Application.Current.MainPage;
+                if (page is MasterDetailPage mdp)
+                    return mdp.Detail.Navigation;
+                return page.Navigation;
+            }
+        }
 
 
         #region AtomControl

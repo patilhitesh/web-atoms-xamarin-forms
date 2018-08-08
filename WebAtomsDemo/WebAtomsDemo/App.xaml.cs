@@ -34,8 +34,8 @@ namespace WebAtomsDemo
                 try
                 {
                     await AtomBridge.Instance.InitAsync($"{amdLoader}");
-                    await AtomBridge.Instance.ExecuteScriptAsync($"{webAtomsCore}/src/xf/samples/index.js");
-
+                    // await AtomBridge.Instance.ExecuteScriptAsync($"{webAtomsCore}/src/xf/samples/index.js");
+                    await AtomBridge.Instance.ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/web-atoms-samples@1.0.5/src/xf/index.js");
                     // var val = AtomBridge.Instance.engine.Global.Get("Promise");
                     // System.Diagnostics.Debug.WriteLine(val);
                 }

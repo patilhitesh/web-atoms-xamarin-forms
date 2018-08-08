@@ -277,7 +277,7 @@ namespace WebAtoms
                 try
                 {
                     var e = wrapper.As<Page>();
-                    await Application.Current.MainPage.Navigation.PushAsync(e, true);
+                    await WebAtoms.WAContext.Current.Navigation.PushAsync(e, true);
                     success.Call(null, new Java.Lang.Object[] { });
                 }
                 catch (Exception ex) {
