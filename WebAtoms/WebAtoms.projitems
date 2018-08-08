@@ -9,6 +9,7 @@
     <Import_RootNamespace>WebAtoms</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)JSControlCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebAtomsContext.cs" />
   </ItemGroup>
 </Project>

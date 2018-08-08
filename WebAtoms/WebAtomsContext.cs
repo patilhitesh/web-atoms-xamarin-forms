@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Xamarin.Forms;
+using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
@@ -113,6 +114,26 @@ namespace WebAtoms
                 typeof(WAContext),
                 null);
         #endregion
+
+        #region Imports
+        public static Dictionary<string,Func<Element>> GetImports(BindableObject obj)
+        {
+            return (Dictionary<string, Func<Element>>)obj.GetValue(ImportsProperty);
+        }
+
+        public static void SetImports(BindableObject obj, Dictionary<string, Func<Element>> value)
+        {
+            obj.SetValue(ImportsProperty, value);
+        }
+
+        // Using a DependencyProperty as the backing store for AtomControl.  This enables animation, styling, binding, etc...
+        public static readonly BindableProperty ImportsProperty =
+            BindableProperty.CreateAttached(
+                "Imports",
+                typeof(Dictionary<string, Func<Element>>),
+                typeof(WAContext),
+                null);
+        #endregion
     }
 
     public class TemplateView: ViewCell {
@@ -130,6 +151,31 @@ namespace WebAtoms
             this.SetBindingContext?.Invoke(this.BindingContext);
         }
 
+    }
+
+    [ContentProperty("Type")]
+    public class JSObjectCreator : IMarkupExtension<Element>
+    {
+
+        public string Type { get; set; }
+
+        public object ProvideValue(IServiceProvider serviceProvider)
+        {
+            var root = serviceProvider.GetService(typeof(IRootObjectProvider)) as IRootObjectProvider;
+
+            var d = WAContext.GetImports(root.RootObject as Element);
+
+            if (d.TryGetValue(Type, out Func<Element> f)) {
+                return f();
+            }
+
+            throw new NotImplementedException();
+        }
+
+        Element IMarkupExtension<Element>.ProvideValue(IServiceProvider serviceProvider)
+        {
+            return (Element)(this as IMarkupExtension).ProvideValue(serviceProvider);
+        }
     }
 
 }

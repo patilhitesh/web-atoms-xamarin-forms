@@ -247,6 +247,20 @@ namespace WebAtoms
             service.Invoke(client, url, ajaxOptions, success, failed, progress);
         }
 
+        public void SetImport(JSWrapper elementWrapper, string name, JSFunction factory) {
+            var element = elementWrapper.As<Element>();
+            var d = WAContext.GetImports(element);
+            if (d == null) {
+                d = new Dictionary<string, Func<Element>>();
+                WAContext.SetImports(element, d);
+            }
+            d[name] = () => {
+                var t = WAContext.GetAtomControl(element);
+                var jv = factory.Call((JSObject)t.Wrap(engine)) as JSValue;
+                return JSWrapper.FromKey(jv.ToObject().GetJSPropertyValue("element").ToString()).As<Element>();
+            };
+        }
+
         public void SetTemplate(JSWrapper elementWrapper, string name, JSFunction factory) {
             var element = elementWrapper.As<Element>();
             PropertyInfo p = element.GetType().GetProperty(name);
