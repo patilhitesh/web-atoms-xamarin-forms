@@ -26,13 +26,15 @@ namespace WebAtoms
                 return null;
             });
 
-            var retValue = watch.Call(array, (Java.Lang.Object)clrFunc);
+            var retValue = watch.Apply(array, new Java.Lang.Object[] { null, clrFunc });
 
             this.disposable = retValue.ToObject();
         }
 
         NotifyCollectionChangedEventArgs CreateEventArgs(object[] plist)
         {
+            // var first = plist[0];
+            // var array = (first as JSValue).ToJSArray();
             var mode = plist[0].ToString();
             var index = (plist[1] as JSValue).ToNumber().IntValue();
 
