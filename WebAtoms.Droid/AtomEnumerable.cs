@@ -26,7 +26,7 @@ namespace WebAtoms
                 return null;
             });
 
-            var retValue = watch.Apply(array, new Java.Lang.Object[] { null, clrFunc });
+            var retValue = watch.Call(array, clrFunc, true );
 
             this.disposable = retValue.ToObject();
         }
@@ -35,8 +35,8 @@ namespace WebAtoms
         {
             // var first = plist[0];
             // var array = (first as JSValue).ToJSArray();
-            var mode = plist[0].ToString();
-            var index = (plist[1] as JSValue).ToNumber().IntValue();
+            var mode = plist[1].ToString();
+            var index = (plist[2] as JSValue).ToNumber().IntValue();
 
             switch (mode) {
                 case "refresh":
