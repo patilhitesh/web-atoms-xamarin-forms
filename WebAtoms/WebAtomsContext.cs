@@ -1,11 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
+
     public class WAContext
     {
 
@@ -16,12 +19,44 @@ namespace WebAtoms
 
         }
 
+        private void BindDisposer(Page page) {
+
+            if (WAContext.GetDisappearHandler(page) != null)
+                return;
+
+            EventHandler handler = (s, e) =>
+            {
+                Device.BeginInvokeOnMainThread(async () =>
+                {
+                    await Task.Delay(100);
+                    if (Navigation.NavigationStack.Any(x => x == page))
+                    {
+                        AtomBridge.Instance.DisposePage(page, true);
+                        page.Disappearing -= WAContext.GetDisappearHandler(page);
+                        WAContext.SetDisappearHandler(page, null);
+                    }
+                });
+            };
+            WAContext.SetDisappearHandler(page, handler);
+            page.Disappearing += handler;
+        }
+
         public Page CurrentPage {
             get => Application.Current.MainPage;
             set
             {
+                if (value != null)
+                {
+                    BindDisposer(value);
+                }
                 Application.Current.MainPage = value;
             }
+        }
+
+        public async Task PushAsync(Page e, bool value)
+        {
+            BindDisposer(e);
+            await Navigation.PushAsync(e, value);
         }
 
         public INavigation Navigation {
@@ -125,12 +160,30 @@ namespace WebAtoms
         {
             obj.SetValue(ImportsProperty, value);
         }
-
         // Using a DependencyProperty as the backing store for AtomControl.  This enables animation, styling, binding, etc...
         public static readonly BindableProperty ImportsProperty =
             BindableProperty.CreateAttached(
                 "Imports",
                 typeof(Dictionary<string, Func<Element>>),
+                typeof(WAContext),
+                null);
+        #endregion
+
+        #region DisapperHandler
+        public static EventHandler GetDisappearHandler(BindableObject obj)
+        {
+            return (EventHandler)obj.GetValue(DisappearHandlerProperty);
+        }
+
+        public static void SetDisappearHandler(BindableObject obj, EventHandler value)
+        {
+            obj.SetValue(DisappearHandlerProperty, value);
+        }
+        // Using a DependencyProperty as the backing store for AtomControl.  This enables animation, styling, binding, etc...
+        public static readonly BindableProperty DisappearHandlerProperty =
+            BindableProperty.CreateAttached(
+                "DisappearHandler",
+                typeof(EventHandler),
                 typeof(WAContext),
                 null);
         #endregion

@@ -297,7 +297,7 @@ namespace WebAtoms
                 try
                 {
                     var e = wrapper.As<Page>();
-                    await WebAtoms.WAContext.Current.Navigation.PushAsync(e, true);
+                    await WebAtoms.WAContext.Current.PushAsync(e, true);
                     success.Call(null, new Java.Lang.Object[] { });
                 }
                 catch (Exception ex) {
@@ -428,7 +428,11 @@ namespace WebAtoms
             if (element == null) {
                 throw new ObjectDisposedException("Cannot visit descendents of null");
             }
-            foreach (var e in (element as IElementController).LogicalChildren) {
+
+            var views = element as IViewContainer<View>;
+            if (views == null)
+                return;
+            foreach (var e in views.Children) {
                 var ac = WAContext.GetAtomControl(e);
                 var child = e.Wrap(Engine);
                 var r = action.Call(null, new Java.Lang.Object[] {
@@ -549,6 +553,19 @@ namespace WebAtoms
                 }
 
             });
+        }
+
+        public void DisposePage(Element e, bool disposeFromCLR)
+        {
+            if (disposeFromCLR)
+            {
+                var ac = (WAContext.GetAtomControl(e) as JSValue).ToObject();
+                var func = ac.GetJSPropertyValue("dispose").ToFunction();
+                func.Call(ac);
+                return;
+            }
+
+
         }
 
     }
