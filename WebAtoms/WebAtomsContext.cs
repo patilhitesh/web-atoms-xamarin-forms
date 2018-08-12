@@ -3,11 +3,33 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
+
+    public class AtomCommand : ICommand
+    {
+        readonly Action action;
+        public AtomCommand(Action action)
+        {
+            this.action = action;
+        }
+
+        public event EventHandler CanExecuteChanged;
+
+        public bool CanExecute(object parameter)
+        {
+            return true;
+        }
+
+        public void Execute(object parameter)
+        {
+            this.action();
+        }
+    }
 
     public class WAContext
     {
@@ -56,6 +78,9 @@ namespace WebAtoms
         public async Task PushAsync(Page e, bool value)
         {
             BindDisposer(e);
+            if (!(e is NavigationPage)) {
+                e = new NavigationPage(e);
+            }
             await Navigation.PushAsync(e, value);
         }
 
@@ -187,6 +212,32 @@ namespace WebAtoms
                 typeof(WAContext),
                 null);
         #endregion
+        public IDisposable AddEventHandler(Element element, string name, Action action)
+        {
+            View view = element as View;
+            IGestureRecognizer recognizer = null;
+            switch (name.ToLower()) {
+                case "tapgesture":
+                    recognizer = new TapGestureRecognizer
+                    {
+                        Command = new AtomCommand(() => {
+                            action();
+                        })
+                    };
+                    break;
+                case "pangesture":
+                    break;
+                case "pinchgesture":
+                    break;
+            }
+            if (recognizer != null) {
+                view.GestureRecognizers.Add(recognizer);
+                return new AtomDisposable(() => {
+                    view.GestureRecognizers.Remove(recognizer);
+                });
+            }
+            throw new NotImplementedException($"No gesture recognizer found for {name}");
+        }
     }
 
     public class TemplateView: ViewCell {

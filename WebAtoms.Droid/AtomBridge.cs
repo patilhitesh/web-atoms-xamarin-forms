@@ -8,6 +8,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
@@ -54,6 +55,7 @@ namespace WebAtoms
                 Engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
                 // engine.SetJSPropertyValue("global", engine);
                 Engine.SetJSPropertyValue("document", null);
+                Engine.SetJSPropertyValue("location", null);
 
                 // engine.Global.Put("global", engine.Global, false);
                 // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
@@ -348,6 +350,22 @@ namespace WebAtoms
 
             var e = element.GetType().GetEvent(name);
 
+            if (e == null) {
+                var disposable = WAContext.Current.AddEventHandler(element, name, () => {
+                    try
+                    {
+                        callback.Call(null);
+                    }
+                    catch (Exception ex) {
+                        System.Diagnostics.Debug.WriteLine(ex);
+                        Engine.ThrowJSException(new JSException(Engine, ex.Message));
+                    }
+                });
+                return new JSDisposable(Engine, () => {
+                    disposable.Dispose();
+                });
+            }
+
             var pe = new AtomDelegate() { callback = callback };
 
             var handler = Delegate.CreateDelegate(e.EventHandlerType, pe, AtomDelegate.OnEventMethod);
@@ -392,6 +410,8 @@ namespace WebAtoms
             bool cu = !((bool)climbUp.IsUndefined()) && !((bool)climbUp.IsNull()) && (bool)climbUp.ToBoolean();
             if (cu) {
                 element = element.Parent;
+                if (element == null)
+                    return null;
             }
             do {
                 var e = WAContext.GetAtomControl(element);
@@ -449,6 +469,16 @@ namespace WebAtoms
             WAContext.SetAtomControl(e, null);
             WAContext.SetLogicalParent(e, null);
             WAContext.SetTemplateParent(e, null);
+
+            if (e is Page page) {
+                // we need to remove this page if the page is on the stack...
+                try
+                {
+                    WAContext.Current.Navigation.RemovePage(page);
+                }
+                catch (Exception ex) {
+                }
+            }
         }
 
         public void AppendChild(Element view, Element child) {
@@ -524,7 +554,17 @@ namespace WebAtoms
                 return;
             }
             else {
-                pv.SetValue(view, value.ToObject());
+
+                if (pv.PropertyType == typeof(ICommand))
+                {
+                    pv.SetValue(view, new AtomCommand(() => {
+                        value.ToFunction().Call(null);
+                    }));
+                }
+                else
+                {
+                    pv.SetValue(view, value.ToObject());
+                }
             }
         }
 

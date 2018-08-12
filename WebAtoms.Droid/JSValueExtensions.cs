@@ -45,6 +45,11 @@ namespace WebAtoms
         }
 
         public static object ToType(this JSValue value, Type type) {
+            if (value != null)
+            {
+                if ((bool)value.IsNull())
+                    return null;
+            }
             if (type == typeof(int))
             {
                 if (value == null)
