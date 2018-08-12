@@ -81,15 +81,24 @@ namespace WebAtoms
             if (!(e is NavigationPage)) {
                 e = new NavigationPage(e);
             }
-            await Navigation.PushAsync(e, value);
+
+            var nav = Application.Current.MainPage.GetNavigation();
+            if (nav != null) {
+                await nav.PushAsync(e, value);
+                return;
+            }
+
+            if (Application.Current.MainPage is MasterDetailPage mdp) {
+                mdp.Detail = e;
+                return;
+            }
+
+            Application.Current.MainPage = e;
         }
 
         public INavigation Navigation {
             get {
-                var page = Application.Current.MainPage;
-                if (page is MasterDetailPage mdp)
-                    return mdp.Detail.Navigation;
-                return page.Navigation;
+                return Application.Current.MainPage.GetNavigation();
             }
         }
 
@@ -238,6 +247,20 @@ namespace WebAtoms
             }
             throw new NotImplementedException($"No gesture recognizer found for {name}");
         }
+    }
+
+    public static class PageExtensions {
+
+        public static INavigation GetNavigation(this Page page) {
+            if (page is NavigationPage) {
+                return page.Navigation;
+            }
+            if (page is MasterDetailPage mdp) {
+                return mdp.Detail.GetNavigation();
+            }
+            return null;
+        }
+
     }
 
     public class TemplateView: ViewCell {
