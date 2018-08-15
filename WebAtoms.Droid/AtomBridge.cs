@@ -300,7 +300,7 @@ namespace WebAtoms
                 {
                     var e = wrapper.As<Page>();
                     await WebAtoms.WAContext.Current.PushAsync(e, true);
-                    success.Call(null, new Java.Lang.Object[] { });
+                    // success.Call(null, new Java.Lang.Object[] { });
                 }
                 catch (Exception ex) {
                     error.Call(null, new Java.Lang.Object[] { ex.ToString() });

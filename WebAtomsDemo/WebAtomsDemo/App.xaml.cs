@@ -24,7 +24,7 @@ namespace WebAtomsDemo
 
             var amdLoader = "https://cdn.jsdelivr.net/npm/web-atoms-amd-loader@1.0.22";
 
-            AtomBridge.Instance.Client.BaseAddress = new Uri("http://192.168.1.9:8080");
+            AtomBridge.Instance.Client.BaseAddress = new Uri("http://192.168.1.9:8080"); 
             // AtomBridge.Instance.Client.BaseAddress = new Uri("https://cdn.jsdelivr.net/npm/web-atoms-samples@1.0.6");
 
             Device.BeginInvokeOnMainThread(async () => {
