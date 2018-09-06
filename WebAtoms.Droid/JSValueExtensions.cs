@@ -113,6 +113,9 @@ namespace WebAtoms
                 }
                 return list;
             }
+            if (type == typeof(JSObject)) {
+                return value.ToObject();
+            }
             if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
                 return value;
             return null;

@@ -68,7 +68,7 @@ namespace WebAtoms
                 Execute("var console = {};");
                 Execute("console.log = function(l) { bridge.log('log', l); };");
                 Execute("console.warn = function(l) { bridge.log('warn', l); };");
-                Execute("console.error = function(l) { bridge.log('error', l); };");
+                Execute("console.error = function(l) { bridge.log('error', l); if(l.stack) { bridge.log('error', l.stack); } };");
 
                 Execute("console.log('Started .... ');");
 
@@ -88,6 +88,7 @@ namespace WebAtoms
             //if (title != "log")
             //{
             //    Debugger.Break();
+            //    var obj = text.ToObject();
             //}
             System.Diagnostics.Debug.WriteLine($"{title}: {text}");
         }

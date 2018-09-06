@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Rg.Plugins.Popup.Pages;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
+using Rg.Plugins.Popup.Extensions;
 
 namespace WebAtoms
 {
@@ -78,11 +80,18 @@ namespace WebAtoms
         public async Task PushAsync(Page e, bool value)
         {
             BindDisposer(e);
+
+            var nav = Application.Current.MainPage.GetNavigation();
+
+            if (e is PopupPage pp) {
+                await nav.PushPopupAsync(pp, true);
+                return;
+            }
+
             if (!(e is NavigationPage)) {
                 e = new NavigationPage(e);
             }
 
-            var nav = Application.Current.MainPage.GetNavigation();
             if (nav != null) {
                 await nav.PushAsync(e, value);
                 return;
@@ -224,6 +233,14 @@ namespace WebAtoms
         public IDisposable AddEventHandler(Element element, string name, Action action)
         {
             View view = element as View;
+
+            if (view is Button button) {
+                button.Command = new AtomCommand(action);
+                return new AtomDisposable(() => {
+                    button.Command = null;
+                });
+            }
+
             IGestureRecognizer recognizer = null;
             switch (name.ToLower()) {
                 case "tapgesture":
