@@ -378,9 +378,9 @@ namespace WebAtoms
                 pe.callback = null;
             });
         }
-        public JSDisposable WatchProperty(JSWrapper objTarget, string name, JSFunction callback)
+        public JSDisposable WatchProperty(JSWrapper objTarget, string name, JSValue events, JSFunction callback)
         {
-            object obj = objTarget.Target;
+            object obj = objTarget.As<object>();
             if (obj is INotifyPropertyChanged element)
             {
 
@@ -390,7 +390,8 @@ namespace WebAtoms
                 {
                     if (e.PropertyName == name)
                     {
-                        callback.Call( null, new Java.Lang.Object[] { obj.Wrap(Engine) } );
+                        var value = pinfo.GetValue(obj);
+                        callback.Call( null, new Java.Lang.Object[] { value.Wrap(Engine) } );
                     }
                 };
 

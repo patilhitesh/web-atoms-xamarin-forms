@@ -27,7 +27,7 @@ namespace WebAtomsDemo
             // AtomBridge.Instance.Client.BaseAddress = new Uri("http://192.168.1.9:8080"); 
             // AtomBridge.Instance.Client.BaseAddress = new Uri("https://cdn.jsdelivr.net/npm/web-atoms-samples@1.0.6");
 
-            AtomBridge.Instance.Client.BaseAddress = new Uri("https://v2018-test.800casting.com/uiv/ts-apps/dist/xf/Admin?version=1.0.54");
+            AtomBridge.Instance.Client.BaseAddress = new Uri("https://v2018-test.800casting.com/uiv/ts-apps/dist/xf/Admin?version=1.0.61");
 
             Device.BeginInvokeOnMainThread(async () => {
                 try
@@ -35,7 +35,7 @@ namespace WebAtomsDemo
                     await AtomBridge.Instance.InitAsync($"{amdLoader}");
                     // await AtomBridge.Instance.ExecuteScriptAsync($"/src/xf/samples/index.js");
                     // await AtomBridge.Instance.ExecuteScriptAsync("/src/xf/index.js");
-                    await AtomBridge.Instance.ExecuteScriptAsync("https://v2018-test.800casting.com/uiv/ts-apps@1.0.56/dist/xf/Admin?platform=xf");                   // var val = AtomBridge.Instance.engine.Global.Get("Promise");
+                    await AtomBridge.Instance.ExecuteScriptAsync("https://v2018-test.800casting.com/uiv/ts-apps@1.0.63/dist/xf/Admin?platform=xf");                   // var val = AtomBridge.Instance.engine.Global.Get("Promise");
                     // System.Diagnostics.Debug.WriteLine(val);
                 }
                 catch (Exception ex) {

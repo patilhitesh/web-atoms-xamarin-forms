@@ -34,7 +34,7 @@ namespace WebAtoms
         {
             Device.BeginInvokeOnMainThread(async () => {
                 try {
-                    string method = ajaxOptions.GetJSPropertyValue("type").ToString();
+                    string method = ajaxOptions.GetJSPropertyValue("method").ToString().ToLower();
                     var m = HttpMethod.Get;
                     HttpContent hc = null;
                     switch (method)
@@ -64,13 +64,17 @@ namespace WebAtoms
                     var res = await client.SendAsync(msg, HttpCompletionOption.ResponseHeadersRead);
 
                     ajaxOptions.SetJSPropertyValue("status", (int)res.StatusCode);
-
-                    if (!res.IsSuccessStatusCode) {
-                        string error = await res.Content.ReadAsStringAsync();
-                        ajaxOptions.SetJSPropertyValue("responseText", error);
-                        failed.Call(null, new Java.Lang.Object[] { error });
-                        return;
+                    var ct = res.Content.Headers.ContentType?.ToString();
+                    if(ct != null) {
+                        ajaxOptions.SetJSPropertyValue("responseType", ct);
                     }
+
+                    //if (!res.IsSuccessStatusCode) {
+                    //    string error = await res.Content.ReadAsStringAsync();
+                    //    ajaxOptions.SetJSPropertyValue("responseText", error);
+                    //    success.Call(null, new Java.Lang.Object[] { error });
+                    //    return;
+                    //}
 
                     string text = await res.Content.ReadAsStringAsync();
                     ajaxOptions.SetJSPropertyValue("responseText", text);
