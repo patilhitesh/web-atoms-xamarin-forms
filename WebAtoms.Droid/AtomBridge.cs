@@ -1,4 +1,5 @@
 ﻿using Org.Liquidplayer.Javascript;
+using Rg.Plugins.Popup.Pages;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -309,6 +310,17 @@ namespace WebAtoms
             });
         }
 
+        public void Close(JSWrapper wrapper, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try {
+                    var e = wrapper.As<Element>();
+                    await WebAtoms.WAContext.Current.PopAsync(e, true);
+                } catch (Exception ex) {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
         public static AtomBridge Instance = new AtomBridge();
 
         IEnumerable<System.Reflection.TypeInfo> types;
@@ -467,19 +479,28 @@ namespace WebAtoms
         }
 
         public void Dispose(JSWrapper et) {
-            Element e = et.As<Element>();
-            WAContext.SetAtomControl(e, null);
-            WAContext.SetLogicalParent(e, null);
-            WAContext.SetTemplateParent(e, null);
+            try
+            {
+                Element e = et.As<Element>();
+                WAContext.SetAtomControl(e, null);
+                WAContext.SetLogicalParent(e, null);
+                WAContext.SetTemplateParent(e, null);
 
-            if (e is Page page) {
-                // we need to remove this page if the page is on the stack...
-                try
-                {
-                    WAContext.Current.Navigation.RemovePage(page);
-                }
-                catch (Exception ex) {
-                }
+                //if (e is Page page)
+                //{
+                //    // we need to remove this page if the page is on the stack...
+                //    try
+                //    {
+                //        // WAContext.(page);
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        System.Diagnostics.Debug.WriteLine(ex);
+                //    }
+                //}
+            }
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine(ex);
             }
         }
 
@@ -510,6 +531,11 @@ namespace WebAtoms
         public void SetValue(JSWrapper target, string name, JSValue value) {
 
             Element view = target.As<Element>();
+
+            if (view != null && name.Equals("name", StringComparison.OrdinalIgnoreCase)) {
+                WAContext.SetWAName(view, name);
+                return;
+            }
 
             bool isNull = (bool)value.IsNull() || (bool)value.IsUndefined();
 
@@ -608,6 +634,13 @@ namespace WebAtoms
             }
 
 
+        }
+        public void Broadcast(Page page, string str)
+        {
+            var ac = (WAContext.GetAtomControl(page) as JSValue)?.ToObject();
+            var app = ac?.GetJSPropertyValue("app")?.ToObject();
+            var function = app?.GetJSPropertyValue("broadcast")?.ToFunction();
+            function.Call(app, new Java.Lang.Object[] { str, null });
         }
 
     }

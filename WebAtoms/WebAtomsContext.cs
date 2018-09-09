@@ -53,9 +53,25 @@ namespace WebAtoms
                 Device.BeginInvokeOnMainThread(async () =>
                 {
                     await Task.Delay(100);
-                    if (Navigation.NavigationStack.Any(x => x == page))
+
+                    var id = WAContext.GetWAName(page);
+
+                    AtomBridge.Instance.Broadcast(page, $"atom-window-cancel:{id}");
+
+                    if (page is PopupPage pp)
                     {
-                        AtomBridge.Instance.DisposePage(page, true);
+                        if (!Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Any(x => x == page))
+                        {
+                            // AtomBridge.Instance.DisposePage(page, true);
+                            page.Disappearing -= WAContext.GetDisappearHandler(page);
+                            WAContext.SetDisappearHandler(page, null);
+                        }
+                        return;
+                    }
+
+                    if (!Navigation.NavigationStack.Any(x => x == page))
+                    {
+                        // AtomBridge.Instance.DisposePage(page, true);
                         page.Disappearing -= WAContext.GetDisappearHandler(page);
                         WAContext.SetDisappearHandler(page, null);
                     }
@@ -73,7 +89,19 @@ namespace WebAtoms
                 {
                     BindDisposer(value);
                 }
-                Application.Current.MainPage = value;
+                if (!(value is NavigationPage))
+                {
+                    var np = new NavigationPage(value);
+                    if (string.IsNullOrWhiteSpace(value.Title))
+                    {
+                        value.Title = "App";
+                    }
+                    Application.Current.MainPage = np;
+                }
+                else
+                {
+                    Application.Current.MainPage = value;
+                }
             }
         }
 
@@ -103,6 +131,18 @@ namespace WebAtoms
             }
 
             Application.Current.MainPage = e;
+        }
+        public async Task PopAsync(Element e, bool value)
+        {
+            var nav = Application.Current.MainPage.GetNavigation();
+
+            if (e is PopupPage p)
+            {
+                await nav.RemovePopupPageAsync(p, value);
+            }
+            else {
+                await nav.PopAsync();
+            }
         }
 
         public INavigation Navigation {
@@ -230,6 +270,27 @@ namespace WebAtoms
                 typeof(WAContext),
                 null);
         #endregion
+
+        #region WAName
+        public static string GetWAName(BindableObject obj)
+        {
+            return (string)obj.GetValue(WANameProperty);
+        }
+
+        public static void SetWAName(BindableObject obj, string value)
+        {
+            obj.SetValue(WANameProperty, value);
+        }
+
+        // Using a DependencyProperty as the backing store for AtomControl.  This enables animation, styling, binding, etc...
+        public static readonly BindableProperty WANameProperty =
+            BindableProperty.CreateAttached(
+                "WAName",
+                typeof(string),
+                typeof(WAContext),
+                null);
+        #endregion
+
         public IDisposable AddEventHandler(Element element, string name, Action action)
         {
             View view = element as View;
