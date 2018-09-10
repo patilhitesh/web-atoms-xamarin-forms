@@ -96,6 +96,9 @@ namespace WebAtoms
                     {
                         value.Title = "App";
                     }
+                    if (value is MasterDetailPage mdp) {
+                        mdp.IsPresented = false;
+                    }
                     Application.Current.MainPage = np;
                 }
                 else
