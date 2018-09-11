@@ -27,4 +27,20 @@
   <style name="AppCompatDialogStyle" parent="Theme.AppCompat.Light.Dialog">
     <item name="colorAccent">#FF4081</item>
   </style>
+
+
+  <style name ="WebAtomsAppTheme" parent="Theme.AppCompat.Light.NoActionBar">
+
+    <!-- Customize your theme here -->
+
+    <item name ="colorPrimary">@color/colorPrimary</item>
+    <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+    <item name ="colorAccent">@color/colorAccent</item>
+
+
+    <!--<item name="android:buttonStyle">@style/AppTheme.Button</item>-->
+
+
+  </style>
+  
 </resources>

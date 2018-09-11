@@ -9,7 +9,7 @@ using Android.OS;
 
 namespace WebAtomsDemo.Droid
 {
-    [Activity(Label = "WebAtomsDemo", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
+    [Activity(Label = "WebAtomsDemo", Icon = "@mipmap/icon", Theme = "@style/WebAtomsAppTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation)]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
     {
         protected override void OnCreate(Bundle bundle)
@@ -17,12 +17,12 @@ namespace WebAtomsDemo.Droid
 
             base.OnCreate(bundle);
 
-            TabLayoutResource = Resource.Layout.Tabbar;
-            ToolbarResource = Resource.Layout.Toolbar;
 
             Rg.Plugins.Popup.Popup.Init(this, bundle);
 
             global::Xamarin.Forms.Forms.Init(this, bundle);
+            // TabLayoutResource = Resource.Layout.Tabbar;
+            ToolbarResource = Resource.Layout.Toolbar;
             try
             {
                 LoadApplication(new App());

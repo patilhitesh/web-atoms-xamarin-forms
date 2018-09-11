@@ -91,15 +91,26 @@ namespace WebAtoms
                 }
                 if (!(value is NavigationPage))
                 {
-                    var np = new NavigationPage(value);
-                    if (string.IsNullOrWhiteSpace(value.Title))
+                    if (value is MasterDetailPage mdp)
                     {
-                        value.Title = "App";
-                    }
-                    if (value is MasterDetailPage mdp) {
                         mdp.IsPresented = false;
+                        if (!(mdp.Detail is NavigationPage))
+                        {
+                            var n = new NavigationPage(mdp.Detail);
+                            mdp.Detail = new ContentPage { Title = "None", Content = new Label { Text = "None" } };
+                            mdp.Detail = n;
+                        }
+                        Application.Current.MainPage = value;
                     }
-                    Application.Current.MainPage = np;
+                    else
+                    {
+                        var np = new NavigationPage(value);
+                        if (string.IsNullOrWhiteSpace(value.Title))
+                        {
+                            value.Title = "App";
+                        }
+                        Application.Current.MainPage = np;
+                    }
                 }
                 else
                 {

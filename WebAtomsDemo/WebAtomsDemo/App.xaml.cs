@@ -14,11 +14,12 @@ namespace WebAtomsDemo
 
             // MainPage = new MainPage();
 
-            MainPage = new ContentPage {
+            MainPage = new NavigationPage( new ContentPage {
+                Title = "Loading..",
                 Content = new Label {
                     Text = "Loading..."
                 }
-            };
+            });
 
             var engine = AtomBridge.Instance.Engine;
 
