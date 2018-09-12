@@ -189,6 +189,7 @@ namespace WebAtoms
                     jobj.InvokeProperty(item.Name.ToCamelCase(), (Java.Lang.Object)r);
                 }
                 catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine($"Failed to execute {item.Name}");
                     System.Diagnostics.Debug.WriteLine(ex.ToString());
                     throw;
                 }

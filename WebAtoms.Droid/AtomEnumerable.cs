@@ -1,8 +1,10 @@
 ﻿using Org.Liquidplayer.Javascript;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 
 namespace WebAtoms
 {
@@ -10,11 +12,14 @@ namespace WebAtoms
         IEnumerable, 
         INotifyPropertyChanged, 
         INotifyCollectionChanged, 
-        IDisposable
+        IDisposable,
+        IGrouping<string,object>
     {
         JSObject disposable;
         JSBaseArray array;
 
+        public string Key { get; set; }
+        
         public AtomEnumerable(JSBaseArray array)
         {
             this.array = array;
@@ -64,6 +69,16 @@ namespace WebAtoms
             for (var i = 0; i < array.Size(); i++) {
                 yield return array.Get(i);
             }    
+        }
+
+        IEnumerator<object> IEnumerable<object>.GetEnumerator()
+        {
+            return (IEnumerator<object>)this.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
     }
 }
