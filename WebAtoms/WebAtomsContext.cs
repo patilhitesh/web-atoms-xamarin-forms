@@ -37,11 +37,13 @@ namespace WebAtoms
 
                     AtomBridge.Instance.Broadcast(page, $"atom-window-cancel:{id}");
 
+                    await Task.Delay(100);
+
                     if (page is PopupPage pp)
                     {
                         if (!Rg.Plugins.Popup.Services.PopupNavigation.Instance.PopupStack.Any(x => x == page))
                         {
-                            // AtomBridge.Instance.DisposePage(page, true);
+                            AtomBridge.Instance.DisposePage(page, true);
                             page.Disappearing -= WAContext.GetDisappearHandler(page);
                             WAContext.SetDisappearHandler(page, null);
                         }
@@ -50,7 +52,7 @@ namespace WebAtoms
 
                     if (!Navigation.NavigationStack.Any(x => x == page))
                     {
-                        // AtomBridge.Instance.DisposePage(page, true);
+                        AtomBridge.Instance.DisposePage(page, true);
                         page.Disappearing -= WAContext.GetDisappearHandler(page);
                         WAContext.SetDisappearHandler(page, null);
                     }
