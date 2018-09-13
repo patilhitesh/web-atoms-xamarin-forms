@@ -16,72 +16,6 @@ using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
-    
-    public class JSGroupList : List<IGrouping<string,object>>, System.Collections.Specialized.INotifyCollectionChanged {
-
-        System.Collections.IEnumerable list;
-        readonly string field;
-        readonly string itemsField;
-
-        public JSGroupList(System.Collections.IEnumerable list, string field, string itemsField)
-        {
-            this.itemsField = itemsField;
-            this.field = field;
-            this.list = list.OfType<object>();
-
-            if (list is System.Collections.Specialized.INotifyCollectionChanged icn) {
-                icn.CollectionChanged += Icn_CollectionChanged;
-            }
-
-            ResetList();
-        }
-
-        public event NotifyCollectionChangedEventHandler CollectionChanged;
-
-        private void Icn_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-        {
-            ResetList(true);   
-        }
-
-        void ResetList(bool notify = false)
-        {
-            this.Clear();
-
-            if (itemsField != null)
-            {
-                foreach (var x in list)
-                {
-                    var jobj = (x as JSValue).ToObject();
-                    string group = jobj.GetJSPropertyValue(field).ToString();
-                    var children = new AtomEnumerable(jobj.GetJSPropertyValue(itemsField).ToJSArray());
-                    children.Key = group;
-                    this.Add(children);
-                }
-            }
-            else {
-                this.AddRange(list.OfType<object>().GroupBy(x => (x as JSValue).ToObject().GetJSPropertyValue(field)?.ToString()));
-            }
-            if (notify)
-            {
-                CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
-            }
-        }
-    }
-
-    public class AppExceptionHandler : Java.Lang.Object, JSContext.IJSExceptionHandler
-    {
-        Action<JSException> action;
-        public AppExceptionHandler(Action<JSException> action)
-        {
-            this.action = action;
-        }
-
-        void JSContext.IJSExceptionHandler.Handle(JSException p0)
-        {
-            action(p0);
-        }
-    }
-
     public class AtomBridge: IJSService
     {
 
@@ -105,7 +39,7 @@ namespace WebAtoms
                     }
                 }));
 
-                Client = new HttpClient();
+                Client = (new AtomWebClient()).Client;
                 Engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
                 // engine.SetJSPropertyValue("global", engine);
                 Engine.SetJSPropertyValue("document", null);

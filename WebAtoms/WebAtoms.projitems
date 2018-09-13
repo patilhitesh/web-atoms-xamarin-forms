@@ -9,7 +9,14 @@
     <Import_RootNamespace>WebAtoms</Import_RootNamespace>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)AtomCommand.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IWebClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)JSControlCreator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JSListView.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JSObjectCreator.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)JSWebClient.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PageExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)TemplateView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebAtomsContext.cs" />
   </ItemGroup>
 </Project>
