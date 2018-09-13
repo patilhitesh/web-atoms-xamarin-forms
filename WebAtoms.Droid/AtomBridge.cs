@@ -39,7 +39,8 @@ namespace WebAtoms
                     }
                 }));
 
-                Client = (new AtomWebClient()).Client;
+                // Client = (new AtomWebClient()).Client;
+                Client = (new AppOkHttpClient()).Client;
                 Engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
                 // engine.SetJSPropertyValue("global", engine);
                 Engine.SetJSPropertyValue("document", null);
@@ -563,8 +564,20 @@ namespace WebAtoms
 
             if (pt.IsValueType)
             {
+                object clrValue = null;
                 // convert...
-                var v = Convert.ChangeType(value.ToObject(), pt);
+                if (value.IsBoolean().BooleanValue()) {
+                    clrValue = value.ToBoolean().BooleanValue();
+                } else if (value.IsNumber().BooleanValue()) {
+                    if (pt == typeof(double) || pt == typeof(float) || pt == typeof(short))
+                    {
+                        clrValue = value.ToNumber().DoubleValue();
+                    }
+                    else {
+                        clrValue = value.ToNumber().LongValue();
+                    }
+                }
+                var v = Convert.ChangeType(clrValue, pt);
                 pv.SetValue(view, v);
                 return;
             }
@@ -622,12 +635,21 @@ namespace WebAtoms
 
 
         }
-        public void Broadcast(Page page, string str)
+        public void Broadcast(Page page, string str, object p = null)
         {
             var ac = (WAContext.GetAtomControl(page) as JSValue)?.ToObject();
             var app = ac?.GetJSPropertyValue("app")?.ToObject();
             var function = app?.GetJSPropertyValue("broadcast")?.ToFunction();
-            function.Call(app, new Java.Lang.Object[] { str, null });
+            function.Call(app, new Java.Lang.Object[] { str, p == null ? null : p.Wrap(Engine)});
+        }
+
+        public void ShowAlert(string str)
+        {
+            // this.Engine.ExecuteScript("", null);
+
+            // var ac = (WAContext.GetAtomControl(WAContext.Current.JSPage) as JSValue)?.ToObject();
+            // var app = ac?.GetJSPropertyValue("app")?.ToObject();
+            // var nav = 
         }
 
     }

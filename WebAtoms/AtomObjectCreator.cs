@@ -6,7 +6,7 @@ using Xamarin.Forms.Xaml;
 namespace WebAtoms
 {
     [ContentProperty("Type")]
-    public class JSObjectCreator : IMarkupExtension<Element>
+    public class AtomObjectCreator : IMarkupExtension<Element>
     {
 
         public string Type { get; set; }

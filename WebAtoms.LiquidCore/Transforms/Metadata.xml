@@ -42,4 +42,5 @@
       name="managedName">EntrySetGenerated</attr>
   <attr path="/api/package[@name='org.liquidplayer.javascript']/class[@name='JSObjectPropertiesMap.SetIterator']/method[@name='next']"
       name="managedReturn">Java.Lang.Object</attr>
+
 </metadata>

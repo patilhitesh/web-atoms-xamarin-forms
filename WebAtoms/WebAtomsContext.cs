@@ -60,6 +60,16 @@ namespace WebAtoms
             page.Disappearing += handler;
         }
 
+        public Page JSPage {
+            get {
+                var p = CurrentPage;
+                if (p is NavigationPage np) {
+                    p = np.CurrentPage;
+                }
+                return p;
+            }
+        }
+
         public Page CurrentPage {
             get => Application.Current.MainPage;
             set

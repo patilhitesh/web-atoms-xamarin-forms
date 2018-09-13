@@ -5,7 +5,7 @@ using Xamarin.Forms;
 
 namespace WebAtoms
 {
-    public class JSListView : ListView
+    public class AtomListView : ListView
     {
 
 
@@ -18,14 +18,14 @@ namespace WebAtoms
         public static readonly BindableProperty GroupHeaderFieldProperty = BindableProperty.Create(
           nameof(GroupHeaderField),
           typeof(string),
-          typeof(JSListView),
+          typeof(AtomListView),
           null,
           BindingMode.OneWay,
           // validate value delegate
           // (sender,value) => true
           null,
           // property changed, delegate
-          (sender, oldValue, newValue) => ((JSListView)sender).OnGroupHeaderFieldChanged(oldValue, newValue),
+          (sender, oldValue, newValue) => ((AtomListView)sender).OnGroupHeaderFieldChanged(oldValue, newValue),
           // property changing delegate
           // (sender,oldValue,newValue) => {}
           null,
@@ -73,14 +73,14 @@ namespace WebAtoms
         public static readonly BindableProperty GroupItemsFieldProperty = BindableProperty.Create(
           nameof(GroupItemsField),
           typeof(string),
-          typeof(JSListView),
+          typeof(AtomListView),
           null,
           BindingMode.OneWay,
           // validate value delegate
           // (sender,value) => true
           null,
           // property changed, delegate
-          (sender, oldValue, newValue) => ((JSListView)sender).OnGroupItemsFieldChanged(oldValue, newValue),
+          (sender, oldValue, newValue) => ((AtomListView)sender).OnGroupItemsFieldChanged(oldValue, newValue),
           // property changing delegate
           // (sender,oldValue,newValue) => {}
           null,

@@ -16,6 +16,7 @@ using Xamarin.Forms;
 
 namespace WebAtoms
 {
+
     public static class JSValueExtensions
     {
 
@@ -47,7 +48,7 @@ namespace WebAtoms
         public static object ToType(this JSValue value, Type type) {
             if (value != null)
             {
-                if ((bool)value.IsNull())
+                if ((bool)value.IsNull() || (bool)(value.IsUndefined()))
                     return null;
             }
             if (type == typeof(int))
