@@ -1,6 +1,8 @@
 ﻿using Org.Liquidplayer.Javascript;
+using Rg.Plugins.Popup.Pages;
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -8,38 +10,25 @@ using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
 namespace WebAtoms
 {
-    public class AppExceptionHandler : Java.Lang.Object, JSContext.IJSExceptionHandler
-    {
-        Action<JSException> action;
-        public AppExceptionHandler(Action<JSException> action)
-        {
-            this.action = action;
-        }
-
-        void JSContext.IJSExceptionHandler.Handle(JSException p0)
-        {
-            action(p0);
-        }
-    }
-
     public class AtomBridge: IJSService
     {
 
-        public JSContext engine;
+        public JSContext Engine { get; }
 
-        public HttpClient client;
+        public HttpClient Client { get; }
 
         public AtomBridge()
         {
             try
             {
-                engine = new JSContext();
-                engine.SetExceptionHandler(new AppExceptionHandler((e) => {
+                Engine = new JSContext();
+                Engine.SetExceptionHandler(new AppExceptionHandler((e) => {
                     if (e.Error != null)
                     {
                         System.Diagnostics.Debug.WriteLine($"{e.Error.Message()}\r\n{e.Error.Stack()}");
@@ -50,10 +39,12 @@ namespace WebAtoms
                     }
                 }));
 
-                client = new HttpClient();
-                engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
+                // Client = (new AtomWebClient()).Client;
+                Client = (new AppOkHttpClient()).Client;
+                Engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
                 // engine.SetJSPropertyValue("global", engine);
-                engine.SetJSPropertyValue("document", null);
+                Engine.SetJSPropertyValue("document", null);
+                Engine.SetJSPropertyValue("location", null);
 
                 // engine.Global.Put("global", engine.Global, false);
                 // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
@@ -61,12 +52,12 @@ namespace WebAtoms
 
                 // engine.Global.Put("document", Jint.Native.JsValue.Null, true);
                 // Execute("var global = {};");
-                var v8Bridge = engine.AddClrObject(this);
-                engine.SetJSPropertyValue("bridge", v8Bridge);
+                var v8Bridge = Engine.AddClrObject(this);
+                Engine.SetJSPropertyValue("bridge", v8Bridge);
                 Execute("var console = {};");
                 Execute("console.log = function(l) { bridge.log('log', l); };");
                 Execute("console.warn = function(l) { bridge.log('warn', l); };");
-                Execute("console.error = function(l) { bridge.log('error', l); };");
+                Execute("console.error = function(l) { bridge.log('error', l); if(l.stack) { bridge.log('error', l.stack); } };");
 
                 Execute("console.log('Started .... ');");
 
@@ -86,6 +77,7 @@ namespace WebAtoms
             //if (title != "log")
             //{
             //    Debugger.Break();
+            //    var obj = text.ToObject();
             //}
             System.Diagnostics.Debug.WriteLine($"{title}: {text}");
         }
@@ -125,7 +117,7 @@ namespace WebAtoms
             }
             try
             {
-                engine.ExecuteScript(script, url, 0);
+                Engine.ExecuteScript(script, url, 0);
             }
             catch ( JSException  jse) {
                 System.Diagnostics.Debug.WriteLine($"{jse.ToString()}\r\n{jse.Stack()}");
@@ -141,7 +133,13 @@ namespace WebAtoms
             //            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
             try
             {
-                string script = await client.GetStringAsync(url);
+                if (url.StartsWith("/")) {
+                    url = (new Uri(Client.BaseAddress,url)).ToString();
+                }
+                string script = await Client.GetStringAsync(url);
+                if (string.IsNullOrWhiteSpace(script)) {
+                    throw new Exception("Script is null");
+                }
                 Execute(script, url);
             }
             catch (Exception ex) {
@@ -151,8 +149,22 @@ namespace WebAtoms
         }
 
         public void LoadContent(JSWrapper elementTarget, string content) {
-            Element element = elementTarget.As<Element>();
-            (element as Page).LoadFromXaml(content);
+            try
+            {
+                Element element = elementTarget.As<Element>();
+                if (element is View v)
+                {
+                    v.LoadFromXaml(content);
+                }
+                else if (element is Page p) {
+                    p.LoadFromXaml(content);
+                }
+                // (element as View).LoadFromXaml(content);
+            }
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine(ex);
+                throw;
+            }
         }
 
         public Element FindChild(JSWrapper rootTarget, string name)
@@ -198,12 +210,107 @@ namespace WebAtoms
             }
         }
 
-        public Dictionary<string, string> ModuleUrls = new Dictionary<string, string>();
+        public void Alert(string message, string title, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try
+                {
+                    await Application.Current.MainPage.DisplayAlert(title, message, "Ok");
+                    success.Call(null, new Java.Lang.Object[] { });
+                }
+                catch (Exception ex)
+                {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
+        public void Confirm(string message, string title, JSFunction success, JSFunction error)
+        {
+            Device.BeginInvokeOnMainThread(async () => {
+                try
+                {
+                    bool result = await Application.Current.MainPage.DisplayAlert(title, message, "Yes", "No");
+                    success.Call(null, new Java.Lang.Object[] { result });
+                }
+                catch (Exception ex)
+                {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
+        public void Ajax(string url, JSObject ajaxOptions, JSFunction success, JSFunction failed, JSFunction progress) {
+            var client = this.Client;
+            var service = AjaxService.Instance;
+            service.Invoke(client, url, ajaxOptions, success, failed, progress);
+        }
+
+        public void SetImport(JSWrapper elementWrapper, string name, JSFunction factory) {
+            var element = elementWrapper.As<Element>();
+            var d = WAContext.GetImports(element);
+            if (d == null) {
+                d = new Dictionary<string, Func<Element>>();
+                WAContext.SetImports(element, d);
+            }
+            d[name] = () => {
+                var t = WAContext.GetAtomControl(element);
+                var jv = factory.Call((JSObject)t.Wrap(Engine)) as JSValue;
+                return JSWrapper.FromKey(jv.ToObject().GetJSPropertyValue("element").ToString()).As<Element>();
+            };
+        }
+
+        public void SetTemplate(JSWrapper elementWrapper, string name, JSFunction factory) {
+            var element = elementWrapper.As<Element>();
+            PropertyInfo p = element.GetType().GetProperty(name);
+            p.SetValue(element, new DataTemplate(() => {
+                try
+                {
+                    var ac = (factory.Call(null) as JSValue).ToObject();
+                    var eid = ac.GetJSPropertyValue("element");
+                    var e = JSWrapper.FromKey(eid.ToString()).As<View>();
+                    return new TemplateView
+                    {
+                        View = e,
+                        SetBindingContext = (obj) =>
+                        {
+                            ac.SetJSPropertyValue("data", (Java.Lang.Object)obj);
+                        }
+                    };
+                }
+                catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                    throw;
+                }
+            }));
+        }
+
+        public void PushPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try
+                {
+                    var e = wrapper.As<Page>();
+                    await WebAtoms.WAContext.Current.PushAsync(e, true);
+                    success.Call(null, new Java.Lang.Object[] { });
+                }
+                catch (Exception ex) {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
+        public void Close(JSWrapper wrapper, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try {
+                    var e = wrapper.As<Element>();
+                    await WebAtoms.WAContext.Current.PopAsync(e, true);
+                    success.Call(null, new Java.Lang.Object[] { });
+                } catch (Exception ex) {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
 
         public static AtomBridge Instance = new AtomBridge();
-
-        public string BaseUrl = "";
-
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
@@ -245,20 +352,36 @@ namespace WebAtoms
 
             var e = element.GetType().GetEvent(name);
 
+            if (e == null) {
+                var disposable = WAContext.Current.AddEventHandler(element, name, () => {
+                    try
+                    {
+                        callback.Call(null);
+                    }
+                    catch (Exception ex) {
+                        System.Diagnostics.Debug.WriteLine(ex);
+                        Engine.ThrowJSException(new JSException(Engine, ex.Message));
+                    }
+                });
+                return new JSDisposable(Engine, () => {
+                    disposable.Dispose();
+                });
+            }
+
             var pe = new AtomDelegate() { callback = callback };
 
             var handler = Delegate.CreateDelegate(e.EventHandlerType, pe, AtomDelegate.OnEventMethod);
 
             e.AddEventHandler(element, handler);
 
-            return new JSDisposable(engine, () => {
+            return new JSDisposable(Engine, () => {
                 e.RemoveEventHandler(element, handler);
                 pe.callback = null;
             });
         }
-        public JSDisposable WatchProperty(JSWrapper objTarget, string name, JSFunction callback)
+        public JSDisposable WatchProperty(JSWrapper objTarget, string name, JSValue events, JSFunction callback)
         {
-            object obj = objTarget.Target;
+            object obj = objTarget.As<object>();
             if (obj is INotifyPropertyChanged element)
             {
 
@@ -268,28 +391,35 @@ namespace WebAtoms
                 {
                     if (e.PropertyName == name)
                     {
-                        callback.Call( null, new Java.Lang.Object[] { obj.Wrap(engine) } );
+                        var value = pinfo.GetValue(obj);
+                        callback.Call( null, new Java.Lang.Object[] { value.Wrap(Engine) } );
                     }
                 };
 
                 element.PropertyChanged += handler;
-                return new JSDisposable(engine, () =>
+                return new JSDisposable(Engine, () =>
                 {
                     element.PropertyChanged -= handler;
                 });
             }
 
-            return new JSDisposable(engine, () => { });
+            return new JSDisposable(Engine, () => { });
         }
 
         public JSValue AtomParent(JSWrapper target, JSValue climbUp)
         {
             Element element = target.As<Element>();
+
             bool cu = !((bool)climbUp.IsUndefined()) && !((bool)climbUp.IsNull()) && (bool)climbUp.ToBoolean();
+            if (cu) {
+                element = element.Parent;
+                if (element == null)
+                    return null;
+            }
             do {
                 var e = WAContext.GetAtomControl(element);
                 if (e != null)
-                    return e.Wrap(engine);
+                    return e.Wrap(Engine);
                 element = element.Parent;
             } while (cu && element != null);
             return null;
@@ -297,7 +427,7 @@ namespace WebAtoms
 
         public JSValue ElementParent(JSWrapper elementTarget) {
             Element element = elementTarget.As<Element>();
-            return element.Parent?.Wrap(engine);
+            return element.Parent?.Wrap(Engine);
         }
 
         public JSValue TemplateParent(JSWrapper elementTarget) {
@@ -305,7 +435,7 @@ namespace WebAtoms
             do {
                 var e = WAContext.GetTemplateParent(element);
                 if (e != null)
-                    return e.Wrap(engine);
+                    return e.Wrap(Engine);
                 element = element.Parent;
             } while (element != null);
             return null;
@@ -321,9 +451,13 @@ namespace WebAtoms
             if (element == null) {
                 throw new ObjectDisposedException("Cannot visit descendents of null");
             }
-            foreach (var e in (element as IElementController).LogicalChildren) {
+
+            var views = element as IViewContainer<View>;
+            if (views == null)
+                return;
+            foreach (var e in views.Children) {
                 var ac = WAContext.GetAtomControl(e);
-                var child = e.Wrap(engine);
+                var child = e.Wrap(Engine);
                 var r = action.Call(null, new Java.Lang.Object[] {
                     child,
                     (JSValue)ac});
@@ -334,10 +468,29 @@ namespace WebAtoms
         }
 
         public void Dispose(JSWrapper et) {
-            Element e = et.As<Element>();
-            WAContext.SetAtomControl(e, null);
-            WAContext.SetLogicalParent(e, null);
-            WAContext.SetTemplateParent(e, null);
+            try
+            {
+                Element e = et.As<Element>();
+                WAContext.SetAtomControl(e, null);
+                WAContext.SetLogicalParent(e, null);
+                WAContext.SetTemplateParent(e, null);
+
+                //if (e is Page page)
+                //{
+                //    // we need to remove this page if the page is on the stack...
+                //    try
+                //    {
+                //        // WAContext.(page);
+                //    }
+                //    catch (Exception ex)
+                //    {
+                //        System.Diagnostics.Debug.WriteLine(ex);
+                //    }
+                //}
+            }
+            catch (Exception ex) {
+                System.Diagnostics.Debug.WriteLine(ex);
+            }
         }
 
         public void AppendChild(Element view, Element child) {
@@ -360,13 +513,18 @@ namespace WebAtoms
             Element view = viewTarget.As<Element>();
             var pv = view.GetProperty(name);
             var value = pv.GetValue(view);
-            return value.Wrap(engine);
+            return value.Wrap(Engine);
             // return null;
         }
 
         public void SetValue(JSWrapper target, string name, JSValue value) {
 
             Element view = target.As<Element>();
+
+            if (view != null && name.Equals("name", StringComparison.OrdinalIgnoreCase)) {
+                WAContext.SetWAName(view, name);
+                return;
+            }
 
             bool isNull = (bool)value.IsNull() || (bool)value.IsUndefined();
 
@@ -387,11 +545,12 @@ namespace WebAtoms
             }
 
             // check if it is an array
-            if (value is JSBaseArray array) {
+            if ((bool)value.IsArray()) {
                 var old = pv.GetValue(view);
                 if (old is IDisposable d) {
                     d.Dispose();
                 }
+                var array = value.ToJSArray();
                 pv.SetValue(view, new AtomEnumerable(array));
                 return;
             }
@@ -406,49 +565,50 @@ namespace WebAtoms
 
             if (pt.IsValueType)
             {
+                object clrValue = null;
                 // convert...
-                var v = Convert.ChangeType(value.ToObject(), pt);
+                if (value.IsBoolean().BooleanValue()) {
+                    clrValue = value.ToBoolean().BooleanValue();
+                } else if (value.IsNumber().BooleanValue()) {
+                    if (pt == typeof(double) || pt == typeof(float) || pt == typeof(short))
+                    {
+                        clrValue = value.ToNumber().DoubleValue();
+                    }
+                    else {
+                        clrValue = value.ToNumber().LongValue();
+                    }
+                }
+                var v = Convert.ChangeType(clrValue, pt);
                 pv.SetValue(view, v);
                 return;
             }
             else {
-                pv.SetValue(view, value.ToObject());
+
+                if (pv.PropertyType == typeof(ICommand))
+                {
+                    pv.SetValue(view, new AtomCommand(() => {
+                        value.ToFunction().Call(null);
+                    }));
+                }
+                else
+                {
+                    pv.SetValue(view, value.ToObject());
+                }
             }
-        }
-
-        public string ResolveName(string baseUrl, string item) {
-            if (item.StartsWith("."))
-            {
-                var currentUrl = new Uri(baseUrl);
-                var relUrl = new Uri(item, UriKind.Relative);
-                var absUrl = new Uri(currentUrl, relUrl);
-                var s = absUrl.ToString() + ".js";
-                Log("Info", new JSValue(engine, $"Resolve(\"{baseUrl}\",\"{item}\") = \"{s}\""));
-                return s;
-            }
-
-            var tokens = item.Split('/');
-
-            var packageName = tokens.First();
-            var path = string.Join("/", tokens.Skip(1));
-
-            var url = this.ModuleUrls[packageName];
-
-            return url + path + ".js";
         }
 
         public void LoadModuleScript(string name, string url, JSFunction success, JSFunction error) {
             Device.BeginInvokeOnMainThread(async () => {
                 try {
 
-                    string script = await client.GetStringAsync(url);
+                    string script = await Client.GetStringAsync(url);
 
-                    success.Call(null, new Java.Lang.Object[] {new JSClrFunction(engine, (args) =>
+                    success.Call(null, new Java.Lang.Object[] {new JSClrFunction(Engine, (args) =>
                     {
 
                         Execute(script, url);
 
-                        return new JSValue(engine);
+                        return new JSValue(Engine);
                     }) });
                 }
                 catch (JSException ex) {
@@ -464,86 +624,34 @@ namespace WebAtoms
             });
         }
 
-        //public async Task ExecuteScriptAsync(string item) {
-        //    using (var client = new HttpClient())
-        //    {
-
-        //        try
-        //        {
-
-        //            Log($"Downloading {item}");
-        //            var script = await client.GetStringAsync(item);
-        //            Log($"Executing {item}");
-        //            BaseUrl = item;
-        //            //Execute(script, new Jint.Parser.ParserOptions {
-        //            //    Source = item
-        //            //});
-        //            Execute(script, new Esprima.ParserOptions(item) {
-        //                 SourceType = SourceType.Script
-        //            });
-        //        }
-        //        catch (Exception ex) {
-        //            Log($"Failed: {item}");
-        //            Log(ex);
-        //            throw;
-        //        }
-        //    }
-        //}
-
-        //public void AppLoaded(JsValue require, JsValue exports) {
-
-        //    try
-        //    {
-        //        //Jint.Native.Object.ObjectConstructor oc = exports.AsObject().GetProperty("App").Value.AsObject() as Jint.Native.Object.ObjectConstructor;
-        //        //var appObject = oc.Construct(new JsValue[] { });
-
-        //        //appObject.GetProperty("main").Value.Invoke();
-
-        //        engine.Global.Put("_require", require, true);
-        //        engine.Global.Put("_exports", exports, true);
-
-        //        Execute($"var appBridge = _require('web-atoms-core/bin/core/bridge');");
-        //        Execute($"appBridge.AtomBridge.instance = bridge;");
-
-        //        Execute($"var app = new _exports.App();" +
-        //            $"app.main();");
+        public void DisposePage(Element e, bool disposeFromCLR)
+        {
+            if (disposeFromCLR)
+            {
+                var ac = (WAContext.GetAtomControl(e) as JSValue).ToObject();
+                var func = ac.GetJSPropertyValue("dispose").ToFunction();
+                func.Call(ac);
+                return;
+            }
 
 
-        //        Log("App loaded");
-        //    }
-        //    catch (Exception ex) {
-        //        Log(ex);
-
-        //    }
-        //}
-
-        //public void ExecuteScript(string item, JsValue callback) {
-        //    Device.BeginInvokeOnMainThread(async () => {
-
-        //        await ExecuteScriptAsync(item);
-
-        //        try
-        //        {
-        //            if (callback != null)
-        //            {
-        //                callback.Invoke();
-        //            }
-        //        }
-        //        catch (Exception ex) {
-        //            Log(ex);
-        //        }
-                
-        //    });
-        //}
-
-
-        public Action<object> OnLog = l => { System.Diagnostics.Debug.WriteLine(l); };
-
-        public void LogObject(object a) {
-            OnLog(a);
+        }
+        public void Broadcast(Page page, string str, object p = null)
+        {
+            var ac = (WAContext.GetAtomControl(page) as JSValue)?.ToObject();
+            var app = ac?.GetJSPropertyValue("app")?.ToObject();
+            var function = app?.GetJSPropertyValue("broadcast")?.ToFunction();
+            function.Call(app, new Java.Lang.Object[] { str, p == null ? null : p.Wrap(Engine)});
         }
 
+        public void ShowAlert(string str)
+        {
+            // this.Engine.ExecuteScript("", null);
 
+            // var ac = (WAContext.GetAtomControl(WAContext.Current.JSPage) as JSValue)?.ToObject();
+            // var app = ac?.GetJSPropertyValue("app")?.ToObject();
+            // var nav = 
+        }
 
     }
 }

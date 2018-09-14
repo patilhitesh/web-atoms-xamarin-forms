@@ -15,7 +15,6 @@
     <FileAlignment>512</FileAlignment>
     <AndroidResgenFile>Resources\Resource.Designer.cs</AndroidResgenFile>
     <GenerateSerializationAssemblies>Off</GenerateSerializationAssemblies>
-    <AndroidUseLatestPlatformSdk>true</AndroidUseLatestPlatformSdk>
     <TargetFrameworkVersion>v8.1</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -23,7 +22,7 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG;__DROID__</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
@@ -47,6 +46,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AjaxService.cs" />
+    <Compile Include="AppExceptionHandler.cs" />
     <Compile Include="AtomArray1.cs" />
     <Compile Include="AtomBridge.cs" />
     <Compile Include="AtomDelegate.cs" />
@@ -55,9 +56,11 @@
     <Compile Include="DictionaryExtensions.cs" />
     <Compile Include="EmptyDisposable.cs" />
     <Compile Include="IJSObject.cs" />
+    <Compile Include="JSGroupList.cs" />
     <Compile Include="JSValueExtensions.cs" />
     <Compile Include="JSWrapper.cs" />
     <Compile Include="ObjectReferenceWrapper.cs" />
+    <Compile Include="OkHttpClient.cs" />
     <Compile Include="Resources\Resource.Designer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -65,9 +68,15 @@
     <None Include="Resources\AboutResources.txt" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Rg.Plugins.Popup">
+      <Version>1.1.4.168</Version>
+    </PackageReference>
+    <PackageReference Include="Square.OkHttp3">
+      <Version>3.8.1</Version>
+    </PackageReference>
     <PackageReference Include="Xamarin.Android.Support.v7.AppCompat" Version="25.4.0.2" />
     <PackageReference Include="Xamarin.Forms">
-      <Version>3.0.0.482510</Version>
+      <Version>3.1.0.697729</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup>

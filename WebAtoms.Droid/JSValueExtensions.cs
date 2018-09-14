@@ -16,6 +16,7 @@ using Xamarin.Forms;
 
 namespace WebAtoms
 {
+
     public static class JSValueExtensions
     {
 
@@ -45,6 +46,11 @@ namespace WebAtoms
         }
 
         public static object ToType(this JSValue value, Type type) {
+            if (value != null)
+            {
+                if ((bool)value.IsNull() || (bool)(value.IsUndefined()))
+                    return null;
+            }
             if (type == typeof(int))
             {
                 if (value == null)
@@ -92,10 +98,13 @@ namespace WebAtoms
             if (type == typeof(JSWrapper)) {
                 return JSWrapper.FromKey(value.ToString());
             }
-            if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
-                return value;
 
             if (value is JSArray j) {
+
+                if (type == typeof(System.Collections.IEnumerable)) {
+                    return new AtomEnumerable(j);
+                }
+
                 // type is IList...
                 var list = Activator.CreateInstance(type) as System.Collections.IList;
                 for (int i = 0; i < j.Size(); i++)
@@ -105,6 +114,11 @@ namespace WebAtoms
                 }
                 return list;
             }
+            if (type == typeof(JSObject)) {
+                return value.ToObject();
+            }
+            if (type == typeof(JSValue) || type.IsSubclassOf(typeof(JSValue)))
+                return value;
             return null;
         }
 
@@ -155,6 +169,9 @@ namespace WebAtoms
                 .GetType()
                 .GetMethods(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance)
                 .ToList();
+
+            var properties = value.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
             foreach (var item in methods)
             {
                 try
@@ -173,12 +190,11 @@ namespace WebAtoms
                     jobj.InvokeProperty(item.Name.ToCamelCase(), (Java.Lang.Object)r);
                 }
                 catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine($"Failed to execute {item.Name}");
                     System.Diagnostics.Debug.WriteLine(ex.ToString());
                     throw;
                 }
             }
-
-
             return jobj;
 
         }

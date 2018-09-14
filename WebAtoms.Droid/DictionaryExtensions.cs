@@ -24,7 +24,13 @@ namespace WebAtoms
             Type type = value.GetType();
             string key = $"{type.FullName}.{name}";
 
-            return properties.GetOrCreate(key, k => type.GetProperties().First(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase)));
+            return properties.GetOrCreate(key, k => {
+                var a = type.GetProperties().FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                if (a == null) {
+                    throw new KeyNotFoundException($"Properrty {name} not found {type.FullName}");
+                }
+                return a;
+            });
         }
 
         public static bool IsEmpty(this string text) {

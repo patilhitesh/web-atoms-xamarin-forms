@@ -12,7 +12,7 @@ namespace WebAtoms
 
         public void OnEvent(Object sender, Object arg)
         {
-            callback.Call((JSObject )arg.Wrap(callback.Context));
+            callback.Call(null);
         }
 
         public static MethodInfo OnEventMethod = typeof(AtomDelegate).GetMethod("OnEvent");

@@ -1,8 +1,10 @@
 ﻿using Org.Liquidplayer.Javascript;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Linq;
 
 namespace WebAtoms
 {
@@ -10,29 +12,36 @@ namespace WebAtoms
         IEnumerable, 
         INotifyPropertyChanged, 
         INotifyCollectionChanged, 
-        IDisposable
+        IDisposable,
+        IGrouping<string,object>
     {
         JSObject disposable;
         JSBaseArray array;
 
+        public string Key { get; set; }
+        
         public AtomEnumerable(JSBaseArray array)
         {
             this.array = array;
 
-            var watch = this.array.GetJSPropertyValue("watch") as JSFunction;
+            var watch = this.array.GetJSPropertyValue("watch").ToFunction();
 
             var clrFunc = new JSClrFunction(array.Context, (plist) => {
                 CollectionChanged?.Invoke(this, CreateEventArgs(plist));
-                return new JSValue(array.Context);
+                return null;
             });
 
-            this.disposable = (JSObject)watch.Call(null, new Java.Lang.Object[] { clrFunc });
+            var retValue = watch.Call(array, clrFunc, true );
+
+            this.disposable = retValue.ToObject();
         }
 
         NotifyCollectionChangedEventArgs CreateEventArgs(object[] plist)
         {
-            var mode = plist[0].ToString();
-            var index = (plist[1] as JSValue).ToNumber().IntValue();
+            // var first = plist[0];
+            // var array = (first as JSValue).ToJSArray();
+            var mode = plist[1].ToString();
+            var index = (plist[2] as JSValue).ToNumber().IntValue();
 
             switch (mode) {
                 case "refresh":
@@ -52,7 +61,7 @@ namespace WebAtoms
         public void Dispose()
         {
             (disposable?.GetJSPropertyValue("dispose") as JSFunction)
-                ?.Call(null);
+                ?.Call(array);
         }
 
         public IEnumerator GetEnumerator()
@@ -60,6 +69,16 @@ namespace WebAtoms
             for (var i = 0; i < array.Size(); i++) {
                 yield return array.Get(i);
             }    
+        }
+
+        IEnumerator<object> IEnumerable<object>.GetEnumerator()
+        {
+            return (IEnumerator<object>)this.GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return this.GetEnumerator();
         }
     }
 }
