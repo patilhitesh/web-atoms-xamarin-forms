@@ -284,6 +284,18 @@ namespace WebAtoms
             }));
         }
 
+        public void PopPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try {
+                    var e = wrapper.As<Page>();
+                    await WebAtoms.WAContext.Current.PopAsync(e, true);
+                    success.Call(null);
+                } catch (Exception ex) {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
+        }
+
         public void PushPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
             Device.BeginInvokeOnMainThread(async () => {
                 try
