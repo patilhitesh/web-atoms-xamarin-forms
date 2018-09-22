@@ -35,9 +35,12 @@ namespace WebAtoms
 
                     var id = WAContext.GetWAName(page);
 
-                    AtomBridge.Instance.Broadcast(page, $"atom-window-cancel:{id}");
+                    if (!string.IsNullOrWhiteSpace(id))
+                    {
+                        AtomBridge.Instance.Broadcast(page, $"atom-window-cancel:{id}");
 
-                    await Task.Delay(100);
+                        await Task.Delay(100);
+                    }
 
                     if (page is PopupPage pp)
                     {

@@ -34,10 +34,7 @@ namespace WebAtomsDemo
                 try
                 {
                     await AtomBridge.Instance.InitAsync($"{amdLoader}");
-                    // await AtomBridge.Instance.ExecuteScriptAsync($"/src/xf/samples/index.js");
-                    // await AtomBridge.Instance.ExecuteScriptAsync("/src/xf/index.js");
-                    await AtomBridge.Instance.ExecuteScriptAsync("https://v2018-test.800casting.com/uiv/ts-apps@1.0.87/dist/xf/Admin?platform=xf");                   // var val = AtomBridge.Instance.engine.Global.Get("Promise");
-                    // System.Diagnostics.Debug.WriteLine(val);
+                    await AtomBridge.Instance.ExecuteScriptAsync("https://v2018-test.800casting.com/uiv/ts-apps@1.0.110/dist/xf/Admin?platform=xf");
                 }
                 catch (Exception ex) {
                     System.Diagnostics.Debug.WriteLine(ex.ToString());

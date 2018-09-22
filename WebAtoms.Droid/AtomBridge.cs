@@ -167,6 +167,25 @@ namespace WebAtoms
             }
         }
 
+        public JSDisposable CreateBusyIndicator() {
+
+            PopupPage pp  = null;
+
+            Device.BeginInvokeOnMainThread(async () => {
+
+                pp = new BusyPopup();
+
+                await WAContext.Current.PushAsync( pp  , true);
+            });
+
+            return new JSDisposable(this.Engine, () => {
+                Device.BeginInvokeOnMainThread(async () => {
+                    await WAContext.Current.PopAsync(pp, true);
+                });
+            });
+
+        }
+
         public Element FindChild(JSWrapper rootTarget, string name)
         {
             Element root = rootTarget.As<Element>();
@@ -640,9 +659,12 @@ namespace WebAtoms
         {
             if (disposeFromCLR)
             {
-                var ac = (WAContext.GetAtomControl(e) as JSValue).ToObject();
-                var func = ac.GetJSPropertyValue("dispose").ToFunction();
-                func.Call(ac);
+                var ac = (WAContext.GetAtomControl(e) as JSValue)?.ToObject();
+                if (ac != null)
+                {
+                    var func = ac.GetJSPropertyValue("dispose").ToFunction();
+                    func.Call(ac);
+                }
                 return;
             }
 
