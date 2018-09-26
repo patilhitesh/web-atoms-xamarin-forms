@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+  <metadata>
+    <id>WebAtoms.Xamarin.Forms</id>
+    <version>$version$</version>
+    <title>NeuroSpeech Web Atoms for Xamarin.Forms</title>
+    <authors>Akash Kava</authors>
+    <owners>Akash Kava</owners>
+    <licenseUrl>https://github.com/neurospeech/web-atoms-xamarin-forms/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/neurospeech/web-atoms-xamarin-forms</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>
+      Web Atoms for Xamarin Forms, includes, AtomToggleButtonBar, AtomGridView
+    </description>
+    <summary>
+      Web Atoms for Xamarin
+    </summary>
+    <releaseNotes>
+    </releaseNotes>
+    <copyright>NeuroSpeech Technologies Pvt Ltd 2016</copyright>
+    <language>en-US</language>
+    <tags>xamarin,gridview, grid, view, togglebuttonbar, toggle, button, bar</tags>
+    <dependencies>
+        <group targetFramework="monoandroid10">
+          <dependency id="Newtonsoft.Json" version="9.0.1"/>
+          <dependency id="Xamarin.Forms" version="2.3.4.231" />
+          <dependency id="Rg.Plugins.Popup" version="1.0.4"/>          
+        </group>
+      <group targetFramework="xamarinios10">
+        <dependency id="Newtonsoft.Json" version="9.0.1"/>
+        <dependency id="Xamarin.Forms" version="2.3.4.231" />
+        <dependency id="Rg.Plugins.Popup" version="1.0.4"/>        
+      </group>
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- <file src="NeuroSpeech.UIAtoms.iOS\bin\Debug\NeuroSpeech.UIAtoms.*" target="lib\Xamarin.iOS10" /> -->
+    <file src="WebAtoms.Droid\bin\Debug\WebAtoms.*" target="lib\MonoAndroid10" />
+    <file src="WebAtoms.Droid\bin\Debug\J2V8BL.*" target="lib\MonoAndroid10" />
+  </files>
+</package>
