@@ -167,6 +167,25 @@ namespace WebAtoms
             }
         }
 
+        public JSDisposable CreateBusyIndicator() {
+
+            PopupPage pp  = null;
+
+            Device.BeginInvokeOnMainThread(async () => {
+
+                pp = new BusyPopup();
+
+                await WAContext.Current.PushAsync( pp  , true);
+            });
+
+            return new JSDisposable(this.Engine, () => {
+                Device.BeginInvokeOnMainThread(async () => {
+                    await WAContext.Current.PopAsync(pp, true);
+                });
+            });
+
+        }
+
         public Element FindChild(JSWrapper rootTarget, string name)
         {
             Element root = rootTarget.As<Element>();
@@ -282,6 +301,18 @@ namespace WebAtoms
                     throw;
                 }
             }));
+        }
+
+        public void PopPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
+            Device.BeginInvokeOnMainThread(async () => {
+                try {
+                    var e = wrapper.As<Page>();
+                    await WebAtoms.WAContext.Current.PopAsync(e, true);
+                    success.Call(null);
+                } catch (Exception ex) {
+                    error.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                }
+            });
         }
 
         public void PushPage(JSWrapper wrapper, JSFunction success, JSFunction error) {
@@ -628,9 +659,12 @@ namespace WebAtoms
         {
             if (disposeFromCLR)
             {
-                var ac = (WAContext.GetAtomControl(e) as JSValue).ToObject();
-                var func = ac.GetJSPropertyValue("dispose").ToFunction();
-                func.Call(ac);
+                var ac = (WAContext.GetAtomControl(e) as JSValue)?.ToObject();
+                if (ac != null)
+                {
+                    var func = ac.GetJSPropertyValue("dispose").ToFunction();
+                    func.Call(ac);
+                }
                 return;
             }
 
