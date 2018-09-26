@@ -21,7 +21,7 @@ namespace WebAtoms
 
         public JSContext Engine { get; }
 
-        public HttpClient Client { get; }
+        public static HttpClient Client { get; } = (new AppOkHttpClient()).Client;
 
         public AtomBridge()
         {
@@ -29,6 +29,7 @@ namespace WebAtoms
             {
                 Engine = new JSContext();
                 Engine.SetExceptionHandler(new AppExceptionHandler((e) => {
+                    System.Diagnostics.Debug.WriteLine(e.ToString());
                     if (e.Error != null)
                     {
                         System.Diagnostics.Debug.WriteLine($"{e.Error.Message()}\r\n{e.Error.Stack()}");
@@ -40,11 +41,12 @@ namespace WebAtoms
                 }));
 
                 // Client = (new AtomWebClient()).Client;
-                Client = (new AppOkHttpClient()).Client;
                 Engine.ExecuteScript("function __paramArrayToArrayParam(t, f) { return function() { var a = []; for(var i=0;i<arguments.length;i++) { a.push(arguments[i]); } return f.call(t, a); } }", "vm");
                 // engine.SetJSPropertyValue("global", engine);
                 Engine.SetJSPropertyValue("document", null);
                 Engine.SetJSPropertyValue("location", null);
+
+                // Engine.ExecuteScript("function __setPropertiesToJSObject(t, n, g, s) { Object.defineProperty(t, n, { get: g, set: s, enumerable: true, configurable: true }); }", "setProperties");
 
                 // engine.Global.Put("global", engine.Global, false);
                 // engine.Global.Put("App", Jint.Native.JsValue.FromObject(engine, WAContext.Current), true);
@@ -52,8 +54,11 @@ namespace WebAtoms
 
                 // engine.Global.Put("document", Jint.Native.JsValue.Null, true);
                 // Execute("var global = {};");
-                var v8Bridge = Engine.AddClrObject(this);
-                Engine.SetJSPropertyValue("bridge", v8Bridge);
+                var v8Bridge = Engine.AddClrObject(this, "bridge");
+
+                // register services...
+                this.RegisterServices(v8Bridge);
+
                 Execute("var console = {};");
                 Execute("console.log = function(l) { bridge.log('log', l); };");
                 Execute("console.warn = function(l) { bridge.log('warn', l); };");
@@ -73,6 +78,8 @@ namespace WebAtoms
 
         private bool initialized = false;
 
+        // public PreferenceService Preferences { get; set; }
+
         public void Log(string title, JSValue text) {
             //if (title != "log")
             //{
@@ -82,17 +89,37 @@ namespace WebAtoms
             System.Diagnostics.Debug.WriteLine($"{title}: {text}");
         }
 
-        public async Task InitAsync(string url) {
+        public static string AmdUrl;
+        private static string startUrl;
+
+        public void Reset() {
+            Instance = new AtomBridge();
+            if (startUrl != null) {
+                LoadApplication(startUrl);
+            }
+        }
+
+        public static void LoadApplication(string url) {
+            startUrl = url;
+            Device.BeginInvokeOnMainThread(async () =>
+            {
+                try
+                {
+                    await Instance.InitAsync();
+                    await Instance.ExecuteScriptAsync(url);
+                }
+                catch (Exception ex) {
+                    System.Diagnostics.Debug.WriteLine(ex);
+                }
+            });
+        }
+
+        public async Task InitAsync() {
             if (initialized)
                 return;
-
+            string url = AmdUrl;
             try
             {
-                //await ExecuteScriptAsync("https://cdn.jsdelivr.net/npm/promise-polyfill@8/dist/polyfill.min.js");
-                //await ExecuteScriptAsync($"{url}/polyfills/endsWith.js");
-                //await ExecuteScriptAsync($"{url}/polyfills/startsWith.js");
-                //await ExecuteScriptAsync($"{url}/polyfills/includes.js");
-
                 await ExecuteScriptAsync($"{url}/umd.js");
 
                 Execute("UMD.viewPrefix = 'xf';");
@@ -130,9 +157,12 @@ namespace WebAtoms
         }
 
         public async Task ExecuteScriptAsync(string url) {
-            //            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
+            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
             try
             {
+                if (url.StartsWith("//")) {
+                    url = "https:" + url;
+                }
                 if (url.StartsWith("/")) {
                     url = (new Uri(Client.BaseAddress,url)).ToString();
                 }
@@ -259,7 +289,7 @@ namespace WebAtoms
         }
 
         public void Ajax(string url, JSObject ajaxOptions, JSFunction success, JSFunction failed, JSFunction progress) {
-            var client = this.Client;
+            var client = Client;
             var service = AjaxService.Instance;
             service.Invoke(client, url, ajaxOptions, success, failed, progress);
         }
@@ -632,6 +662,9 @@ namespace WebAtoms
             Device.BeginInvokeOnMainThread(async () => {
                 try {
 
+                    if (url.StartsWith("//")) {
+                        url = "https:" + url;
+                    }
                     string script = await Client.GetStringAsync(url);
 
                     success.Call(null, new Java.Lang.Object[] {new JSClrFunction(Engine, (args) =>
@@ -667,9 +700,8 @@ namespace WebAtoms
                 }
                 return;
             }
-
-
         }
+
         public void Broadcast(Page page, string str, object p = null)
         {
             var ac = (WAContext.GetAtomControl(page) as JSValue)?.ToObject();
@@ -685,6 +717,13 @@ namespace WebAtoms
             // var ac = (WAContext.GetAtomControl(WAContext.Current.JSPage) as JSValue)?.ToObject();
             // var app = ac?.GetJSPropertyValue("app")?.ToObject();
             // var nav = 
+        }
+
+        public PreferenceService Preferences { get; } = new PreferenceService();
+
+        private void RegisterServices(JSObject v8Bridge)
+        {
+            v8Bridge.AddClrObject(Preferences, "preferences");
         }
 
     }

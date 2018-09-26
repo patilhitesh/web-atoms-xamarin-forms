@@ -55,7 +55,6 @@
     <Compile Include="AtomEnumerable.cs" />
     <Compile Include="DictionaryExtensions.cs" />
     <Compile Include="EmptyDisposable.cs" />
-    <Compile Include="IJSObject.cs" />
     <Compile Include="JSGroupList.cs" />
     <Compile Include="JSValueExtensions.cs" />
     <Compile Include="JSWrapper.cs" />
@@ -68,6 +67,9 @@
     <None Include="Resources\AboutResources.txt" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>11.0.2</Version>
+    </PackageReference>
     <PackageReference Include="Rg.Plugins.Popup">
       <Version>1.1.4.168</Version>
     </PackageReference>

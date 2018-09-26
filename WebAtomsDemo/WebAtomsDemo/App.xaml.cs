@@ -21,25 +21,11 @@ namespace WebAtomsDemo
                 }
             });
 
-            var engine = AtomBridge.Instance.Engine;
+            AtomBridge.AmdUrl = "https://cdn.jsdelivr.net/npm/web-atoms-amd-loader@1.0.41";
 
-            var amdLoader = "https://cdn.jsdelivr.net/npm/web-atoms-amd-loader@1.0.41";
+            AtomBridge.Client.BaseAddress = new Uri("https://v2018-test.800casting.com/uiv/ts-apps/dist/xf/Admin?version=1.0.61");
 
-            // AtomBridge.Instance.Client.BaseAddress = new Uri("http://192.168.1.9:8080"); 
-            // AtomBridge.Instance.Client.BaseAddress = new Uri("https://cdn.jsdelivr.net/npm/web-atoms-samples@1.0.6");
-
-            AtomBridge.Instance.Client.BaseAddress = new Uri("https://v2018-test.800casting.com/uiv/ts-apps/dist/xf/Admin?version=1.0.61");
-
-            Device.BeginInvokeOnMainThread(async () => {
-                try
-                {
-                    await AtomBridge.Instance.InitAsync($"{amdLoader}");
-                    await AtomBridge.Instance.ExecuteScriptAsync("https://v2018-test.800casting.com/uiv/ts-apps@1.0.110/dist/xf/Admin?platform=xf");
-                }
-                catch (Exception ex) {
-                    System.Diagnostics.Debug.WriteLine(ex.ToString());
-                }
-            });
+            AtomBridge.LoadApplication("https://v2018-test.800casting.com/uiv/ts-apps@1.0.118/dist/xf/Admin?platform=xf");
 
 
 

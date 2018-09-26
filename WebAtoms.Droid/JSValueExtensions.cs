@@ -46,6 +46,12 @@ namespace WebAtoms
         }
 
         public static object ToType(this JSValue value, Type type) {
+
+            Type nt = Nullable.GetUnderlyingType(type);
+            if (nt != null) {
+                type = nt;
+            }
+
             if (value != null)
             {
                 if ((bool)value.IsNull() || (bool)(value.IsUndefined()))
@@ -74,6 +80,12 @@ namespace WebAtoms
                 if (value == null)
                     return 0;
                 return value.ToNumber().DoubleValue();
+            }
+            if (type == typeof(decimal))
+            {
+                if (value == null)
+                    return 0;
+                return (decimal)value.ToNumber().DoubleValue();
             }
             if (type == typeof(bool))
             {
@@ -158,7 +170,7 @@ namespace WebAtoms
             return Char.ToLower(text[0]) + text.Substring(1);
         }
 
-        public static JSValue AddClrObject(this JSObject target, IJSService value) {
+        public static JSObject AddClrObject(this JSObject target, IJSService value, string name) {
             JSContext context = target.Context;
             var jobj = new JSObject(context);
 
@@ -195,6 +207,51 @@ namespace WebAtoms
                     throw;
                 }
             }
+
+            //foreach (var property in properties) {
+            //    try
+            //    {
+            //        JSClrFunction getFunction = new JSClrFunction(context, (x) =>
+            //        {
+            //            // map parameters
+            //            return property.GetValue(value);
+            //        });
+
+            //        JSClrFunction setFunction = new JSClrFunction(context, (x) =>
+            //        {
+            //            // map parameters
+            //            property.SetValue(value, x[0] is JSValue jv ? jv.ToType(property.PropertyType) : null);
+            //            return null;
+            //        });
+
+
+            //        jobj.InvokeProperty($"__{property.Name}", setFunction);
+            //        // jobj.InvokeProperty($"get__{property.Name}", getFunction);
+            //        var r = context.ExecuteScript($"__paramArrayToArrayParam(__clr__obj,__clr__obj.__{property.Name})", "AddClrObject", 0);
+            //        // jobj.InvokeProperty(item.Name.ToCamelCase(), (Java.Lang.Object)r);
+
+            //        var obj = target.Context.GetJSPropertyValue("Object").ToObject();
+            //        var def = obj.GetJSPropertyValue("defineProperty").ToFunction();
+            //        var pconf = new JSObject(target.Context);
+            //        pconf.SetJSPropertyValue("set", setFunction);
+            //        pconf.SetJSPropertyValue("get", (Java.Lang.Object)r);
+            //        pconf.SetJSPropertyValue("enumerable", true);
+            //        pconf.SetJSPropertyValue("configurable", true);
+            //        def.Call(obj, jobj, property.Name, pconf);
+
+                    
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        System.Diagnostics.Debug.WriteLine($"Failed to set/get {property.Name}");
+            //        System.Diagnostics.Debug.WriteLine(ex.ToString());
+            //        throw;
+            //    }
+
+            //}
+
+            target.SetJSPropertyValue(name, jobj);
+
             return jobj;
 
         }

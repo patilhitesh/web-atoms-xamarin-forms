@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Xamarin.Forms;
 
 namespace WebAtoms
@@ -28,8 +29,31 @@ namespace WebAtoms
             }
         }
 
+        public static void Clear() {
+            wrappers.Clear();
+        }
+
         private static Dictionary<string, JSWrapper> wrappers = new Dictionary<string, JSWrapper>();
         private static long id = 1;
+
+        static JSWrapper() {
+
+            // collect garbage
+            Device.BeginInvokeOnMainThread(async () => {
+                while (true)
+                {
+                    await Task.Delay(60000);
+
+                    foreach (var wrapper in wrappers.ToList()) {
+                        if (!wrapper.Value.Target.IsAlive) {
+                            wrappers.Remove(wrapper.Key);
+                        }
+                    }
+                   
+                }
+            });
+        }
+
         public static JSWrapper Register(object obj) {
             if (obj == null)
                 throw new ArgumentNullException("Cannot register null");

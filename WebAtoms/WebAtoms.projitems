@@ -17,6 +17,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)AtomObjectCreator.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AtomWebClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)PageExtensions.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)PreferenceService.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)StringExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)TemplateView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)WebAtomsContext.cs" />
