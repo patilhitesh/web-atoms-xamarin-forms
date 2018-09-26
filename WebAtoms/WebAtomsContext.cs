@@ -17,7 +17,10 @@ namespace WebAtoms
 
         public Page CurrentPage {
             get => Application.Current.MainPage;
-            set => Application.Current.MainPage = value;
+            set
+            {
+                Application.Current.MainPage = value;
+            }
         }
 
 
