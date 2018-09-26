@@ -36,6 +36,6 @@
   <files>
     <!-- <file src="NeuroSpeech.UIAtoms.iOS\bin\Debug\NeuroSpeech.UIAtoms.*" target="lib\Xamarin.iOS10" /> -->
     <file src="WebAtoms.Droid\bin\Debug\WebAtoms.*" target="lib\MonoAndroid10" />
-    <file src="WebAtoms.Droid\bin\Debug\J2V8BL.*" target="lib\MonoAndroid10" />
+    <file src="WebAtoms.LiquidCore\bin\Debug\J2V8BL.*" target="lib\MonoAndroid10" />
   </files>
 </package>
