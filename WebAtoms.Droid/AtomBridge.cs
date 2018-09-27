@@ -13,15 +13,58 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
-
+[assembly: Xamarin.Forms.Dependency(typeof(WebAtoms.AtomBridge))]
+[assembly: Xamarin.Forms.Dependency(typeof(WebAtoms.NavigationService))]
 namespace WebAtoms
 {
+
+    public class NavigationService : IJSService
+    {
+
+        private string location;
+
+        public string GetLocation() {
+            return location;
+        }
+
+        public void SetLocation(string location)
+        {
+            this.location = location;
+            AtomBridge.Client.BaseAddress = new Uri(location);
+            AtomBridge.LoadApplication(location);
+        }
+
+        public void Refresh()
+        {
+
+            AtomBridge.Instance.Reset();
+
+        }
+
+        public void Back() {
+
+            Application.Current.MainPage.SendBackButtonPressed();
+
+        }
+
+    }
+
+
     public class AtomBridge: IJSService
     {
 
         public JSContext Engine { get; }
 
         public static HttpClient Client { get; } = (new AppOkHttpClient()).Client;
+
+        private static List<(string, IJSService)> registrations = new List<(string, IJSService)>() {
+            ("preferences", DependencyService.Get<PreferenceService>()),
+            ("navigationService", DependencyService.Get<NavigationService>())
+        };
+
+        public static void RegisterService(string name, IJSService service) {
+            registrations.Add((name, service));
+        }
 
         public AtomBridge()
         {
@@ -56,8 +99,9 @@ namespace WebAtoms
                 // Execute("var global = {};");
                 var v8Bridge = Engine.AddClrObject(this, "bridge");
 
-                // register services...
-                this.RegisterServices(v8Bridge);
+                foreach (var (name, service) in registrations) {
+                    v8Bridge.AddClrObject(service, name);
+                }
 
                 Execute("var console = {};");
                 Execute("console.log = function(l) { bridge.log('log', l); };");
@@ -92,8 +136,10 @@ namespace WebAtoms
         public static string AmdUrl;
         private static string startUrl;
 
+        public static AtomBridge Instance;
+
         public void Reset() {
-            Instance = new AtomBridge();
+            Instance = DependencyService.Get<AtomBridge>(DependencyFetchTarget.NewInstance);
             if (startUrl != null) {
                 LoadApplication(startUrl);
             }
@@ -105,6 +151,9 @@ namespace WebAtoms
             {
                 try
                 {
+                    if (Instance == null) {
+                        Instance = DependencyService.Get<AtomBridge>(DependencyFetchTarget.NewInstance);
+                    }
                     await Instance.InitAsync();
                     await Instance.ExecuteScriptAsync(url);
                 }
@@ -370,8 +419,6 @@ namespace WebAtoms
                 }
             });
         }
-
-        public static AtomBridge Instance = new AtomBridge();
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
@@ -717,13 +764,6 @@ namespace WebAtoms
             // var ac = (WAContext.GetAtomControl(WAContext.Current.JSPage) as JSValue)?.ToObject();
             // var app = ac?.GetJSPropertyValue("app")?.ToObject();
             // var nav = 
-        }
-
-        public PreferenceService Preferences { get; } = new PreferenceService();
-
-        private void RegisterServices(JSObject v8Bridge)
-        {
-            v8Bridge.AddClrObject(Preferences, "preferences");
         }
 
     }

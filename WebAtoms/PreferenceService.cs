@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xamarin.Forms;
 
+[assembly: Xamarin.Forms.Dependency(typeof(WebAtoms.PreferenceService))]
 namespace WebAtoms
 {
     public interface IJSService

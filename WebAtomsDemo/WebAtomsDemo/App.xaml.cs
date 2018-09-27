@@ -23,9 +23,7 @@ namespace WebAtomsDemo
 
             AtomBridge.AmdUrl = "https://cdn.jsdelivr.net/npm/web-atoms-amd-loader@1.0.41";
 
-            AtomBridge.Client.BaseAddress = new Uri("https://v2018-test.800casting.com/uiv/ts-apps/dist/xf/Admin?version=1.0.61");
-
-            AtomBridge.LoadApplication("https://v2018-test.800casting.com/uiv/ts-apps@1.0.118/dist/xf/Admin?platform=xf");
+            DependencyService.Get<NavigationService>().SetLocation("https://v2018-test.800casting.com/uiv/ts-apps@1.0.118/dist/xf/Admin?platform=xf");
 
 
 
