@@ -17,6 +17,11 @@ Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "WebAtomsDemo", "WebAtomsDem
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WebAtoms.LiquidCore", "WebAtoms.LiquidCore\WebAtoms.LiquidCore.csproj", "{2F8D1056-CCE3-48B6-81EF-CA0E2B1F725C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{BBD8F94C-DF9C-4227-9F62-ADDF35D05CA7}"
+	ProjectSection(SolutionItems) = preProject
+		Package.nuspec = Package.nuspec
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		WebAtomsDemo\WebAtomsDemo\WebAtomsDemo.projitems*{39d33ea7-f153-41c0-8c1d-7e00d739c330}*SharedItemsImports = 4
