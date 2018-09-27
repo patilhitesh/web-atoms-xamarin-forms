@@ -422,6 +422,8 @@ namespace WebAtoms
 
         IEnumerable<System.Reflection.TypeInfo> types;
 
+        List<Element> pending = new List<Element>();
+
         public Element Create(string name)
         {
 
@@ -437,6 +439,11 @@ namespace WebAtoms
             var type = types.FirstOrDefault(x => x.FullName.Equals(name, StringComparison.OrdinalIgnoreCase));
 
             Element view = Activator.CreateInstance(type) as Element;
+            pending.Add(view);
+            Device.BeginInvokeOnMainThread(async () => {
+                await Task.Delay(30000);
+                pending.Remove(view);
+            });
             return view;
         }
 
