@@ -67,7 +67,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AjaxService.cs" />
+    <Compile Include="AtomBridge.cs" />
+    <Compile Include="AtomDelegate.cs" />
+    <Compile Include="AtomDisposable.cs" />
     <Compile Include="AtomEnumerable.cs" />
+    <Compile Include="JSDisposable.cs" />
+    <Compile Include="JSGroupList.cs" />
     <Compile Include="JSValueExtensions.cs" />
     <Compile Include="JSWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

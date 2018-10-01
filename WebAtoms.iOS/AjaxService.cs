@@ -19,14 +19,21 @@ namespace WebAtoms
             var data = ajaxOptions.GetJSPropertyValue("data");
             if (data == null)
                 return null;
-            if ((bool)data.IsString()) {
+            if ((bool)data.IsString) {
                 string ct = ajaxOptions.GetJSPropertyValue("contentType")?.ToString();
                 return new StringContent(data.ToString(), System.Text.Encoding.UTF8, ct ?? "application/octat-stream");
             }
             throw new NotSupportedException();
         }
-        public void Invoke(HttpClient client, string url, JSObject ajaxOptions, JSFunction success, JSFunction failed, JSFunction progress)
+        public void Invoke(
+            HttpClient client,
+            string url,
+            JSValue ajaxOptions,
+            JSValue success,
+            JSValue failed,
+            JSValue progress)
         {
+            var context = ajaxOptions.Context;
             Device.BeginInvokeOnMainThread(async () => {
                 try {
                     string method = ajaxOptions.GetJSPropertyValue("method").ToString().ToLower();
@@ -73,10 +80,10 @@ namespace WebAtoms
 
                     string text = await res.Content.ReadAsStringAsync();
                     ajaxOptions.SetJSPropertyValue("responseText", text);
-                    success.Call(null, new Java.Lang.Object[] { ajaxOptions });
+                    success.Call(ajaxOptions);
                 }
                 catch (Exception ex) {
-                    failed.Call(null, new Java.Lang.Object[] { ex.ToString() });
+                    failed.Call(JSValue.From(ex.ToString(), context));
                 }
             });
         }

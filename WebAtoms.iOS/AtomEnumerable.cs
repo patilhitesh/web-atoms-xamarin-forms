@@ -1,5 +1,4 @@
 ﻿using JavaScriptCore;
-using Org.Liquidplayer.Javascript;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -21,20 +20,21 @@ namespace WebAtoms
 
         public string Key { get; set; }
         
-        public AtomEnumerable(JSValue array[])
+        public AtomEnumerable(JSValue array)
         {
             this.array = array;
 
-            var watch = this.array.GetJSPropertyValue("watch").ToFunction();
+            var watch = this.array.GetJSPropertyValue("watch");
 
-            var clrFunc = new JSClrFunction(array.Context, (plist) => {
+            JSContext context = array.Context;
+            var clrFunc = JSClrFunction.From(context, (t,plist) => {
                 CollectionChanged?.Invoke(this, CreateEventArgs(plist));
                 return null;
             });
 
-            var retValue = watch.Call(array, clrFunc, true );
+            var retValue = watch.Call(array, clrFunc, JSValue.From(true, context));
 
-            this.disposable = retValue.ToObject();
+            this.disposable = retValue;
         }
 
         NotifyCollectionChangedEventArgs CreateEventArgs(object[] plist)
@@ -42,7 +42,7 @@ namespace WebAtoms
             // var first = plist[0];
             // var array = (first as JSValue).ToJSArray();
             var mode = plist[1].ToString();
-            var index = (plist[2] as JSValue).ToNumber().IntValue();
+            var index = (plist[2] as JSValue).ToInt32();
 
             switch (mode) {
                 case "refresh":
@@ -61,14 +61,15 @@ namespace WebAtoms
 
         public void Dispose()
         {
-            (disposable?.GetJSPropertyValue("dispose") as JSFunction)
+            (disposable?.GetJSPropertyValue("dispose") as JSValue)
                 ?.Call(array);
         }
 
         public IEnumerator GetEnumerator()
         {
-            for (var i = 0; i < array.Size(); i++) {
-                yield return array.Get(i);
+            var a = array.ToArray();
+            for (var i = 0; i < a.Length; i++) {
+                yield return a[i];
             }    
         }
 

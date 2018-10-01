@@ -97,9 +97,9 @@ namespace WebAtoms
             if (type == typeof(string)) {
                 return value.ToString();
             }
-            if (type == typeof(JSFunction) || type.IsSubclassOf(typeof(JSFunction))) {
-                return value.ToFunction();
-            }
+            //if (type == typeof(JSFunction) || type.IsSubclassOf(typeof(JSFunction))) {
+            //    return value.ToFunction();
+            //}
             if (type == typeof(JSWrapper)) {
                 return JSWrapper.FromKey(value.ToString());
             }
@@ -136,6 +136,10 @@ namespace WebAtoms
             return JSValue.From((NSDate)dateTime, context);
         }
 
+        public static JSValue Invoke(this JSValue value, object thisValue, params object[] args) {
+            return value.Call(args.Select(x => JSValue.From((NSObject)x, value.Context)).ToArray());
+        }
+
         public static DateTime ToDateTime(this JSValue date) {
             return (DateTime)date.ToDate();
             //return new DateTime(
@@ -163,15 +167,47 @@ namespace WebAtoms
             return target[(NSObject)(NSString)name];
         }
 
+        public static void SetJSPropertyValue(this JSContext target, string name, object value)
+        {
+            target.SetValueForKey((NSObject)value, (NSString)name);
+        }
+
+        public static JSValue GetJSPropertyValue(this JSContext target, string name)
+        {
+            return target[(NSObject)(NSString)name];
+        }
+
         public static string ToCamelCase(this string text) {
             return Char.ToLower(text[0]) + text.Substring(1);
         }
 
-        public static JSObject AddClrObject(this JSObject target, IJSService value, string name) {
+        public static JSValue AddClrObject(this JSValue target, IJSService value, string name)
+        {
             JSContext context = target.Context;
-            var jobj = new JSObject(context);
+            JSValue jobj = CreateNewObject(target.Context, value);
 
-            context.SetJSPropertyValue("__clr__obj", jobj);
+            target.SetJSPropertyValue(name, jobj);
+
+            return jobj;
+
+        }
+
+        public static JSValue AddClrObject(this JSContext context, IJSService value, string name)
+        {
+            JSValue jobj = CreateNewObject(context, value);
+
+            context.SetJSPropertyValue(name, jobj);
+
+            return jobj;
+
+        }
+
+        private static JSValue CreateNewObject(JSContext context, IJSService value)
+        {
+            var jobj = JSValue.CreateObject(context);
+
+            //context.SetJSPropertyValue("__clr__obj", jobj);
+            context[(NSString)"clrobj"] = jobj;
 
 
             var methods = value
@@ -185,108 +221,65 @@ namespace WebAtoms
             {
                 try
                 {
-                    JSClrFunction clrFunction = new JSClrFunction(context, (x) =>
+                    JSValue clrFunction = JSClrFunction.From(context, (t, x) =>
                     {
                         // map parameters
-                        return item.Invoke(value, 
+                        return item.Invoke(value,
                             item
                                 .GetParameters()
-                                .Select( (p,i) => (x[i] is JSValue jv) ? jv.ToType(p.ParameterType) : null  ).ToArray());
+                                .Select((p, i) => (x[i] is JSValue jv) ? jv.ToType(p.ParameterType) : null).ToArray())
+                                .Wrap(context);
                     });
 
-                    jobj.InvokeProperty($"__{item.Name}", clrFunction);
-                    var r = context.ExecuteScript($"__paramArrayToArrayParam(__clr__obj,__clr__obj.__{item.Name})", "AddClrObject", 0);
-                    jobj.InvokeProperty(item.Name.ToCamelCase(), (Java.Lang.Object)r);
+                    jobj[(NSString)item.Name.ToCamelCase()] = clrFunction;
                 }
-                catch (Exception ex) {
+                catch (Exception ex)
+                {
                     System.Diagnostics.Debug.WriteLine($"Failed to execute {item.Name}");
                     System.Diagnostics.Debug.WriteLine(ex.ToString());
                     throw;
                 }
             }
 
-            //foreach (var property in properties) {
-            //    try
-            //    {
-            //        JSClrFunction getFunction = new JSClrFunction(context, (x) =>
-            //        {
-            //            // map parameters
-            //            return property.GetValue(value);
-            //        });
-
-            //        JSClrFunction setFunction = new JSClrFunction(context, (x) =>
-            //        {
-            //            // map parameters
-            //            property.SetValue(value, x[0] is JSValue jv ? jv.ToType(property.PropertyType) : null);
-            //            return null;
-            //        });
-
-
-            //        jobj.InvokeProperty($"__{property.Name}", setFunction);
-            //        // jobj.InvokeProperty($"get__{property.Name}", getFunction);
-            //        var r = context.ExecuteScript($"__paramArrayToArrayParam(__clr__obj,__clr__obj.__{property.Name})", "AddClrObject", 0);
-            //        // jobj.InvokeProperty(item.Name.ToCamelCase(), (Java.Lang.Object)r);
-
-            //        var obj = target.Context.GetJSPropertyValue("Object").ToObject();
-            //        var def = obj.GetJSPropertyValue("defineProperty").ToFunction();
-            //        var pconf = new JSObject(target.Context);
-            //        pconf.SetJSPropertyValue("set", setFunction);
-            //        pconf.SetJSPropertyValue("get", (Java.Lang.Object)r);
-            //        pconf.SetJSPropertyValue("enumerable", true);
-            //        pconf.SetJSPropertyValue("configurable", true);
-            //        def.Call(obj, jobj, property.Name, pconf);
-
-                    
-            //    }
-            //    catch (Exception ex)
-            //    {
-            //        System.Diagnostics.Debug.WriteLine($"Failed to set/get {property.Name}");
-            //        System.Diagnostics.Debug.WriteLine(ex.ToString());
-            //        throw;
-            //    }
-
-            //}
-
-            target.SetJSPropertyValue(name, jobj);
-
             return jobj;
-
         }
+    }
+
+    [Protocol]
+    public interface IJSClrFunction : IJSExport {
+
+        [Export("callMe")]
+        JSValue Execute(JSValue thisValue, JSValue[] parameters);
 
     }
 
-    public class JSClrFunction : JSFunction {
+    public class JSClrFunction : NSObject, IJSClrFunction
+    {
 
-        private readonly Func<object[], object> runFunction;
-
-        public JSClrFunction(JSContext context, Func<object[], object> run)
-            : base(context, 
-                GetMethodName(),
-                Java.Lang.Class.FromType(typeof(JSClrFunction)))
+        readonly Func<JSValue, JSValue[], JSValue> func;
+        private JSClrFunction(Func<JSValue,JSValue[],JSValue> func)
         {
-            this.runFunction = run;
+            this.func = func;
         }
 
-        private static Java.Lang.Reflect.Method GetMethodName()
+        public JSValue Execute(JSValue thisValue, JSValue[] parameters)
         {
-            var c = Java.Lang.Class.FromType(typeof(JSClrFunction));
-            var ms = c.GetMethods();
-            var mns = ms.Select(x => x.Name).ToList();
-            var m = ms.FirstOrDefault(x => x.Name.Equals("RunAction", StringComparison.OrdinalIgnoreCase));
-            return m;
+            return func(thisValue, parameters);
         }
 
-        [Export("runAction")]
-        public Java.Lang.Object RunAction(JSArray args) {
-            try
-            {
-                return runFunction(args?.ToArray())?.Wrap(this.Context);
-            }
-            catch (Exception ex) {
-                Context.ThrowJSException(new JSException(Context, ex.ToString()));
-                return null;
-            }
+        public static JSValue From(JSContext context, Func<JSValue, JSValue[], JSValue> func) {
+            var f = new JSClrFunction(func);
+            context[(NSString)"_____clrobj"] = JSValue.From(f, context);
+            return context.ExecuteScript(code, "FROM.js") as JSValue;
         }
 
+        public static string code = "(function(src) { " +
+            "return function () { " +
+                "var args = [];" +
+                "for(var i=0;i<arguments.length;i++) {" +
+                    " args[i] = arguments[i]; " +
+                "}" +
+                "return src.callMe(this, args) }; " +
+            "})(_____clrobj)";
     }
 }

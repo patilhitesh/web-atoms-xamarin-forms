@@ -26,6 +26,7 @@ Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		WebAtomsDemo\WebAtomsDemo\WebAtomsDemo.projitems*{39d33ea7-f153-41c0-8c1d-7e00d739c330}*SharedItemsImports = 4
 		WebAtomsDemo\WebAtomsDemo\WebAtomsDemo.projitems*{3f5f3b46-1ad4-4123-a272-d8810babb80b}*SharedItemsImports = 13
+		WebAtomsDemo\WebAtomsDemo\WebAtomsDemo.projitems*{439d2ff8-2230-4869-b25b-f22c23566315}*SharedItemsImports = 4
 		WebAtoms\WebAtoms.projitems*{cc9c8d18-6df2-46c7-ae8b-6386e692347f}*SharedItemsImports = 4
 		WebAtoms\WebAtoms.projitems*{e71f3053-056c-4381-9638-048ed73bdff6}*SharedItemsImports = 4
 		WebAtoms\WebAtoms.projitems*{f32d702c-fad4-4980-a685-1c848c30b583}*SharedItemsImports = 13

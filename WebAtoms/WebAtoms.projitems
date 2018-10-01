@@ -12,6 +12,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)AtomCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AtomToolbarItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BusyPopup.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)DictionaryExtensions.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)IWebClient.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AtomListView.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AtomObjectCreator.cs" />
