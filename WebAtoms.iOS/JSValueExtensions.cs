@@ -16,7 +16,7 @@ namespace WebAtoms
 
         public static JSValue Wrap(this object value, JSContext context) {
             if (value == null)
-                return null;
+                return JSValue.From(new NSNull(),  context);
             if (value is JSValue jv)
                 return jv;
             if (value is string s)
@@ -45,14 +45,16 @@ namespace WebAtoms
             if (nt != null) {
                 type = nt;
             }
+            if (type == typeof(JSValue))
+                return value;
             if (value == null) {
                 return null;
             }
-            if (value != null)
-            {
-                if (value.IsUndefined || value.IsNull)
-                    return null;
-            }
+            //if (value != null)
+            //{
+            //    if (value.IsNull)
+            //        return null;
+            //}
             if (type == typeof(int))
             {
                 if (value == null)
@@ -155,11 +157,12 @@ namespace WebAtoms
 
         public static object ExecuteScript(this JSContext target, string script, string source, int line = 0) {
             // return target.EvaluateScript(script, source, line);
-            return target.EvaluateScript(script, NSUrl.FromString(script));
+            return target.EvaluateScript(script, NSUrl.FromString(source ?? "a.js"));
         }
 
         public static void SetJSPropertyValue(this JSValue target, string name, object value) {
-            target.SetValueForKey((NSObject)value, (NSString)name);
+            //target.SetValueForKey((NSObject)value, (NSString)name);
+            target[(NSString)name] = value.Wrap(target.Context);
         }
 
         public static JSValue GetJSPropertyValue(this JSValue target, string name)
@@ -169,7 +172,7 @@ namespace WebAtoms
 
         public static void SetJSPropertyValue(this JSContext target, string name, object value)
         {
-            target.SetValueForKey((NSObject)value, (NSString)name);
+            target[(NSString)name] = value.Wrap(target);
         }
 
         public static JSValue GetJSPropertyValue(this JSContext target, string name)
@@ -223,11 +226,14 @@ namespace WebAtoms
                 {
                     JSValue clrFunction = JSClrFunction.From(context, (t, x) =>
                     {
+
+                        var prs = item.GetParameters();
+                        var ps = prs.Select((p, i) => x[i].ToType(p.ParameterType));
+                        var pa = ps.ToArray();
+
+
                         // map parameters
-                        return item.Invoke(value,
-                            item
-                                .GetParameters()
-                                .Select((p, i) => (x[i] is JSValue jv) ? jv.ToType(p.ParameterType) : null).ToArray())
+                        return item.Invoke(value, pa)
                                 .Wrap(context);
                     });
 
@@ -248,7 +254,7 @@ namespace WebAtoms
     [Protocol]
     public interface IJSClrFunction : IJSExport {
 
-        [Export("callMe")]
+        [Export("callMe:a:")]
         JSValue Execute(JSValue thisValue, JSValue[] parameters);
 
     }
@@ -279,7 +285,7 @@ namespace WebAtoms
                 "for(var i=0;i<arguments.length;i++) {" +
                     " args[i] = arguments[i]; " +
                 "}" +
-                "return src.callMe(this, args) }; " +
+                "return src.callMeA(this, args); }; " +
             "})(_____clrobj)";
     }
 }
