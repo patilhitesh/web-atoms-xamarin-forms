@@ -97,6 +97,10 @@ namespace WebAtoms
                 return value.ToDate();
             }
             if (type == typeof(string)) {
+                if (value.IsString)
+                {
+                    return (string)(object)value;
+                }
                 return value.ToString();
             }
             //if (type == typeof(JSFunction) || type.IsSubclassOf(typeof(JSFunction))) {
@@ -255,7 +259,7 @@ namespace WebAtoms
     public interface IJSClrFunction : IJSExport {
 
         [Export("callMe:a:")]
-        JSValue Execute(JSValue thisValue, JSValue[] parameters);
+        JSValue Execute(JSValue thisValue, JSValue parameters);
 
     }
 
@@ -268,9 +272,10 @@ namespace WebAtoms
             this.func = func;
         }
 
-        public JSValue Execute(JSValue thisValue, JSValue[] parameters)
+        public JSValue Execute(JSValue thisValue, JSValue parameters)
         {
-            return func(thisValue, parameters);
+            JSManagedValue v = new JSManagedValue(parameters);
+            return func(thisValue, v.Value[(NSString)"args"].ToArray());
         }
 
         public static JSValue From(JSContext context, Func<JSValue, JSValue[], JSValue> func) {
@@ -281,9 +286,9 @@ namespace WebAtoms
 
         public static string code = "(function(src) { " +
             "return function () { " +
-                "var args = [];" +
+            "var args = { args:[] };" +
                 "for(var i=0;i<arguments.length;i++) {" +
-                    " args[i] = arguments[i]; " +
+                    " args.args[i] = arguments[i]; " +
                 "}" +
                 "return src.callMeA(this, args); }; " +
             "})(_____clrobj)";
