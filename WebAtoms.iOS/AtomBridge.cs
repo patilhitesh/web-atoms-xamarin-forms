@@ -318,7 +318,7 @@ namespace WebAtoms
                 }
                 catch (Exception ex)
                 {
-                    error.Invoke(null, ex);
+                    error.CallJS(null, ex);
                 }
             });
         }
@@ -329,11 +329,11 @@ namespace WebAtoms
                 try
                 {
                     bool result = await Application.Current.MainPage.DisplayAlert(title, message, "Yes", "No");
-                    success.Invoke(null,result);
+                    success.CallJS(null,result);
                 }
                 catch (Exception ex)
                 {
-                    error.Invoke(null, ex.ToString());
+                    error.CallJS(null, ex.ToString());
                 }
             });
         }
@@ -364,7 +364,7 @@ namespace WebAtoms
             p.SetValue(element, new DataTemplate(() => {
                 try
                 {
-                    var ac = (factory.Call(null) as JSValue);
+                    var ac = (factory.Call() as JSValue);
                     var eid = ac.GetJSPropertyValue("element");
                     var e = JSWrapper.FromKey(eid.ToString()).As<View>();
                     return new TemplateView
@@ -372,7 +372,13 @@ namespace WebAtoms
                         View = e,
                         SetBindingContext = (obj) =>
                         {
-                            ac.SetJSPropertyValue("data", obj);
+                            if (obj is ManagedArrayItem mi) {
+                                ac.SetJSPropertyValue("data", mi.Array.Value[mi.Index]);
+                            }
+                            else
+                            {
+                                ac.SetJSPropertyValue("data", obj);
+                            }
                         }
                     };
                 }
@@ -390,7 +396,7 @@ namespace WebAtoms
                     await WebAtoms.WAContext.Current.PopAsync(e, true);
                     success.Call(null);
                 } catch (Exception ex) {
-                    error.Invoke(null, ex.ToString());
+                    error.CallJS(null, ex.ToString());
                 }
             });
         }
@@ -401,10 +407,10 @@ namespace WebAtoms
                 {
                     var e = wrapper.As<Page>();
                     await WebAtoms.WAContext.Current.PushAsync(e, true);
-                    success.Invoke(null);
+                    success.CallJS(null);
                 }
                 catch (Exception ex) {
-                    error.Invoke(null, ex.ToString());
+                    error.CallJS(null, ex.ToString());
                 }
             });
         }
@@ -416,7 +422,7 @@ namespace WebAtoms
                     await WebAtoms.WAContext.Current.PopAsync(e, true);
                     success.Call();
                 } catch (Exception ex) {
-                    error.Invoke(null, ex.ToString());
+                    error.CallJS(null, ex.ToString());
                 }
             });
         }
@@ -448,7 +454,7 @@ namespace WebAtoms
             return view;
         }
 
-        public void AttachControl(JSWrapper target, JSValue control) {
+        public void AttachControl(JSWrapper target, JSManagedValue control) {
             Element element = target.As<Element>();
             var ac = WAContext.GetAtomControl(element);
             if(ac != null)
@@ -462,9 +468,11 @@ namespace WebAtoms
 
         public JSValue AddEventHandler(
             JSWrapper elementTarget, 
-            string name, JSValue callback, bool? capture)
+            string name, JSManagedValue callback, bool? capture)
         {
             Element element = elementTarget.As<Element>();
+
+            // var callback = new JSManagedValue(callback1);
 
             var e = element.GetType().GetEvent(name);
 
@@ -472,7 +480,7 @@ namespace WebAtoms
                 var disposable = WAContext.Current.AddEventHandler(element, name, () => {
                     try
                     {
-                        callback.Call(null);
+                        callback.Value.CallJS(null);
                     }
                     catch (Exception ex) {
                         System.Diagnostics.Debug.WriteLine(ex);
@@ -499,6 +507,7 @@ namespace WebAtoms
         public JSValue WatchProperty(JSWrapper objTarget, string name, JSValue events, JSValue callback)
         {
             object obj = objTarget.As<object>();
+
             if (obj is INotifyPropertyChanged element)
             {
 
@@ -509,7 +518,7 @@ namespace WebAtoms
                     if (e.PropertyName == name)
                     {
                         var value = pinfo.GetValue(obj);
-                        callback.Invoke( null, value.Wrap(Engine));
+                        callback.CallJS( null, value.Wrap(Engine));
                     }
                 };
 
@@ -575,7 +584,7 @@ namespace WebAtoms
             foreach (var e in views.Children) {
                 var ac = WAContext.GetAtomControl(e);
                 var child = e.Wrap(Engine);
-                var r = action.Invoke(null, 
+                var r = action.CallJS(null, 
                     child,
                     (JSValue)ac);
                 if ((bool)r.IsUndefined || (bool)r.IsNull || !((bool)r.ToBool()))
@@ -634,7 +643,7 @@ namespace WebAtoms
             // return null;
         }
 
-        public void SetValue(JSWrapper target, string name, JSValue value) {
+        public void SetValue(JSWrapper target, string name, JSManagedValue mValue) {
 
             Element view = target.As<Element>();
 
@@ -643,6 +652,7 @@ namespace WebAtoms
                 return;
             }
 
+            var value = mValue.Value;
             bool isNull = (bool)value.IsNull || (bool)value.IsUndefined;
 
             var pv = view.GetProperty(name);
@@ -667,7 +677,7 @@ namespace WebAtoms
                 if (old is IDisposable d) {
                     d.Dispose();
                 }
-                pv.SetValue(view, new AtomEnumerable(value));
+                pv.SetValue(view, new AtomEnumerable(mValue));
                 return;
             }
 
@@ -714,6 +724,8 @@ namespace WebAtoms
         }
 
         public void LoadModuleScript(string name, string url, JSValue success, JSValue error) {
+            //JSManagedValue jSuccess = new JSManagedValue(success);
+            //JSManagedValue jError = new JSManagedValue(error);
             Device.BeginInvokeOnMainThread(async () => {
                 try {
 
@@ -722,7 +734,7 @@ namespace WebAtoms
                     }
                     string script = await Client.GetStringAsync(url);
 
-                    success.Invoke(null, JSClrFunction.From(Engine, (t,args) =>
+                    success.CallJS(null, JSClrFunction.From(Engine, (t,args) =>
                     {
 
                         Execute(script, url);
@@ -738,7 +750,7 @@ namespace WebAtoms
                 catch (Exception ex) {
                     var msg = $"Failed to load url {url}\r\n{ex}";
                     System.Diagnostics.Debug.WriteLine(msg);
-                    error.Invoke(null, msg);
+                    error.CallJS(null, msg);
                 }
 
             });
@@ -748,11 +760,12 @@ namespace WebAtoms
         {
             if (disposeFromCLR)
             {
-                var ac = (WAContext.GetAtomControl(e) as JSValue);
+                var ac = (WAContext.GetAtomControl(e) as JSManagedValue);
                 if (ac != null)
                 {
-                    var func = ac.GetJSPropertyValue("dispose");
-                    func.Call(ac);
+                    // var func = ac.Value.GetJSPropertyValue("dispose");
+                    // func.CallJS(ac.Value);
+                    ac.Value.Invoke("dispose");
                 }
                 return;
             }
@@ -760,10 +773,11 @@ namespace WebAtoms
 
         public void Broadcast(Page page, string str, object p = null)
         {
-            var ac = (WAContext.GetAtomControl(page) as JSValue);
-            var app = ac?.GetJSPropertyValue("app");
-            var function = app?.GetJSPropertyValue("broadcast");
-            function?.Invoke(app, str, p == null ? null : p.Wrap(Engine));
+            var ac = (WAContext.GetAtomControl(page) as JSManagedValue);
+            var app = ac?.Value?.GetJSPropertyValue("app");
+            app.Invoke("broadcast", str.Wrap(Engine), p == null ? JSValue.From(new NSNull(), Engine) : p.Wrap(Engine));
+            // var function = app?.GetJSPropertyValue("broadcast");
+            // function?.CallJS(app, str, p == null ? null : p.Wrap(Engine));
         }
 
         public void ShowAlert(string str)

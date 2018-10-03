@@ -8,11 +8,11 @@ namespace WebAtoms
     public class AtomDelegate
     {
 
-        public JSValue callback;
+        public JSManagedValue callback;
 
         public void OnEvent(Object sender, Object arg)
         {
-            callback.Call(null);
+            callback.Value.CallJS(null);
         }
 
         public static MethodInfo OnEventMethod = typeof(AtomDelegate).GetMethod("OnEvent");

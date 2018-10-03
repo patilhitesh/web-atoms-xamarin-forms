@@ -76,6 +76,7 @@
     <Compile Include="JSValueExtensions.cs" />
     <Compile Include="JSWrapper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="IAtomBridge.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

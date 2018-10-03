@@ -40,11 +40,13 @@ namespace WebAtoms
 
             if (itemsField != null)
             {
-                foreach (var x in list)
+                foreach (var x in list.OfType<ManagedArrayItem>())
                 {
-                    var jobj = (x as JSValue);
+                    var jobj = x.Array.Value[x.Index];
+                    //var item = jobj.
                     string group = jobj.GetJSPropertyValue(field).ToString();
-                    var children = new AtomEnumerable(jobj.GetJSPropertyValue(itemsField));
+                    var items = new JSManagedValue( jobj.GetJSPropertyValue(itemsField) );
+                    var children = new AtomEnumerable(items);
                     children.Key = group;
                     this.Add(children);
                 }

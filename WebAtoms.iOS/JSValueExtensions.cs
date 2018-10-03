@@ -39,14 +39,17 @@ namespace WebAtoms
             return JSValue.From(JSWrapper.Register(value).Key, context);
         }
 
-        public static object ToType(this JSValue value, Type type) {
+        public static object ToType(this JSManagedValue mValue, Type type) {
 
             Type nt = Nullable.GetUnderlyingType(type);
             if (nt != null) {
                 type = nt;
             }
             if (type == typeof(JSValue))
-                return value;
+                return mValue.Value;
+            if (type == typeof(JSManagedValue))
+                return mValue;
+            var value = mValue.Value;
             if (value == null) {
                 return null;
             }
@@ -99,7 +102,7 @@ namespace WebAtoms
             if (type == typeof(string)) {
                 if (value.IsString)
                 {
-                    return (string)(object)value;
+                    return value.ToString();
                 }
                 return value.ToString();
             }
@@ -113,7 +116,7 @@ namespace WebAtoms
             if (value.IsArray) {
 
                 if (type == typeof(System.Collections.IEnumerable)) {
-                    return new AtomEnumerable(value);
+                    return new AtomEnumerable(mValue);
                 }
 
                 var j = value.ToArray();
@@ -123,7 +126,8 @@ namespace WebAtoms
                 for (int i = 0; i < j.Length; i++)
                 {
                     Type itemType = type.GetGenericArguments()[0];
-                    list[i] = j[i].ToType(itemType);
+                    var mv = new JSManagedValue(j[i]);
+                    list[i] = mv.ToType(itemType);
                 }
                 return list;
             }
@@ -142,8 +146,9 @@ namespace WebAtoms
             return JSValue.From((NSDate)dateTime, context);
         }
 
-        public static JSValue Invoke(this JSValue value, object thisValue, params object[] args) {
-            return value.Call(args.Select(x => JSValue.From((NSObject)x, value.Context)).ToArray());
+        public static JSValue CallJS(this JSValue value, object thisValue, params object[] args) {
+            thisValue = thisValue ?? value;
+            return value.Call(args.Select(x => x.Wrap(value.Context)).ToArray());
         }
 
         public static DateTime ToDateTime(this JSValue date) {
@@ -171,6 +176,8 @@ namespace WebAtoms
 
         public static JSValue GetJSPropertyValue(this JSValue target, string name)
         {
+            if (target == null)
+                return null;
             return target[(NSObject)(NSString)name];
         }
 
@@ -186,6 +193,15 @@ namespace WebAtoms
 
         public static string ToCamelCase(this string text) {
             return Char.ToLower(text[0]) + text.Substring(1);
+        }
+
+        public static JSManagedValue[] ToJSValueArray(this JSValue value){
+            List<JSManagedValue> list = new List<JSManagedValue>();
+            var len = value.GetJSPropertyValue("length").ToInt32();
+            for (int i = 0; i < len;i++) {
+                list.Add(new JSManagedValue(value[(uint)i]));
+            }
+            return list.ToArray();
         }
 
         public static JSValue AddClrObject(this JSValue target, IJSService value, string name)
@@ -266,8 +282,8 @@ namespace WebAtoms
     public class JSClrFunction : NSObject, IJSClrFunction
     {
 
-        readonly Func<JSValue, JSValue[], JSValue> func;
-        private JSClrFunction(Func<JSValue,JSValue[],JSValue> func)
+        readonly Func<JSManagedValue, JSManagedValue[], JSValue> func;
+        private JSClrFunction(Func<JSManagedValue,JSManagedValue[],JSValue> func)
         {
             this.func = func;
         }
@@ -275,10 +291,13 @@ namespace WebAtoms
         public JSValue Execute(JSValue thisValue, JSValue parameters)
         {
             JSManagedValue v = new JSManagedValue(parameters);
-            return func(thisValue, v.Value[(NSString)"args"].ToArray());
+            JSManagedValue t = new JSManagedValue(thisValue);
+            JSManagedValue a = new JSManagedValue(parameters[(NSString)"args"]);
+
+            return func(t,a.Value.ToJSValueArray());
         }
 
-        public static JSValue From(JSContext context, Func<JSValue, JSValue[], JSValue> func) {
+        public static JSValue From(JSContext context, Func<JSManagedValue, JSManagedValue[], JSValue> func) {
             var f = new JSClrFunction(func);
             context[(NSString)"_____clrobj"] = JSValue.From(f, context);
             return context.ExecuteScript(code, "FROM.js") as JSValue;
