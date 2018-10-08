@@ -56,7 +56,7 @@ namespace WebAtoms
 
         public JSContext Engine { get; }
 
-        public static HttpClient Client { get; } = new HttpClient();
+        public static HttpClient Client { get; } = new AtomWebClient().Client;
 
         private static List<(string, IJSService)> registrations = new List<(string, IJSService)>() {
             ("preferences", DependencyService.Get<PreferenceService>()),

@@ -64,7 +64,7 @@ namespace WebAtoms
 
         public void Dispose()
         {
-            disposable.Value.Invoke("dispose");
+            disposable?.Value?.Invoke("dispose");
             // (disposable?.GetJSPropertyValue("dispose") as JSValue)
             //    ?.Call(array);
         }

@@ -47,6 +47,8 @@ namespace WebAtoms
                     string group = jobj.GetJSPropertyValue(field).ToString();
                     var items = new JSManagedValue( jobj.GetJSPropertyValue(itemsField) );
                     var children = new AtomEnumerable(items);
+                    if (!children.Any())
+                        continue;
                     children.Key = group;
                     this.Add(children);
                 }
