@@ -145,6 +145,12 @@ namespace WebAtoms
             }
         }
 
+        public void ConnectDebugger(string url)
+        {
+            var debuggerService = DependencyService.Get<DebuggerService>();
+            debuggerService.Register(url);
+        }
+
         public static void LoadApplication(string url) {
             startUrl = url;
             Device.BeginInvokeOnMainThread(async () =>

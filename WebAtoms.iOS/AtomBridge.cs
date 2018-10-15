@@ -338,6 +338,13 @@ namespace WebAtoms
             });
         }
 
+        public void ConnectDebugger(string url)
+        {
+            var debuggerService = DependencyService.Get<DebuggerService>();
+            debuggerService.Register(url);
+        }
+
+
         public void Ajax(string url, JSValue ajaxOptions, JSValue success, JSValue failed, JSValue progress) {
             var client = Client;
             var service = AjaxService.Instance;

@@ -21,9 +21,13 @@ namespace WebAtomsDemo
                 }
             });
 
-            AtomBridge.AmdUrl = "https://cdn.jsdelivr.net/npm/web-atoms-amd-loader@1.0.41";
+            AtomBridge.AmdUrl = "https://cdn.jsdelivr.net/npm/web-atoms-amd-loader@1.0.42";
 
-            DependencyService.Get<NavigationService>().SetLocation("https://www.webatoms.in/xf/samples.js");
+            // override bridge...
+            DependencyService.Register<AtomBridge, AppBridge>();
+
+            // DependencyService.Get<NavigationService>().SetLocation("https://www.webatoms.in/xf/samples.js");
+            DependencyService.Get<NavigationService>().SetLocation("http://192.168.0.104:8080/?platform=xf");
 
 
 
