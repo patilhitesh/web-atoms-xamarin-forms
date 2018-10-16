@@ -72,14 +72,14 @@ namespace WebAtoms
             {
                 Engine = new JSContext();
                 Engine.SetExceptionHandler(new AppExceptionHandler((e) => {
-                    System.Diagnostics.Debug.WriteLine(e.ToString());
+                    AtomDevice.Instance.Log(LogType.Error, e.ToString());
                     if (e.Error != null)
                     {
-                        System.Diagnostics.Debug.WriteLine($"{e.Error.Message()}\r\n{e.Error.Stack()}");
+                        AtomDevice.Instance.Log(LogType.Error, $"{e.Error.Message()}\r\n{e.Error.Stack()}");
                     }
                     else
                     {
-                        System.Diagnostics.Debug.WriteLine(e.ToString());
+                        AtomDevice.Instance.Log(LogType.Error, e.ToString());
                     }
                 }));
 
@@ -122,15 +122,16 @@ namespace WebAtoms
 
         private bool initialized = false;
 
-        // public PreferenceService Preferences { get; set; }
-
         public void Log(string title, JSValue text) {
-            //if (title != "log")
-            //{
-            //    Debugger.Break();
-            //    var obj = text.ToObject();
-            //}
-            System.Diagnostics.Debug.WriteLine($"{title}: {text}");
+            var logType = LogType.Log;
+            if (title.EqualsIgnoreCase("error"))
+            {
+                logType = LogType.Error;
+            }
+            else if (title.EqualsIgnoreCase("warning") || title.EqualsIgnoreCase("warn")) {
+                logType = LogType.Warning;
+            }
+            AtomDevice.Instance.Log(logType, $"{title}: {text}");
         }
 
         public static string AmdUrl;
@@ -164,7 +165,7 @@ namespace WebAtoms
                     await Instance.ExecuteScriptAsync(url);
                 }
                 catch (Exception ex) {
-                    System.Diagnostics.Debug.WriteLine(ex);
+                    AtomDevice.Instance.Log(LogType.Error, ex.ToString());
                 }
             });
         }
@@ -188,31 +189,31 @@ namespace WebAtoms
         }
 
         public void ModuleProgress(string name, double progress) {
-            System.Diagnostics.Debug.WriteLine(name);
+            AtomDevice.Instance.Log(LogType.Log, name);
         }
 
         public void Execute(string script, string url = null) {
             ///Device.BeginInvokeOnMainThread(() => { 
             if (url != null)
             {
-                System.Diagnostics.Debug.WriteLine($"Executing: {url}");
+                AtomDevice.Instance.Log(LogType.Log, $"Executing: {url}");
             }
             try
             {
                 Engine.ExecuteScript(script, url, 0);
             }
             catch ( JSException  jse) {
-                System.Diagnostics.Debug.WriteLine($"{jse.ToString()}\r\n{jse.Stack()}");
+                AtomDevice.Instance.Log(LogType.Error, $"{jse}\r\n{jse.Stack()}");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(ex);
+                AtomDevice.Instance.Log(LogType.Error, ex.ToString());
             }
             //});
         }
 
         public async Task ExecuteScriptAsync(string url) {
-            System.Diagnostics.Debug.WriteLine($"Loading url {url}");
+            AtomDevice.Instance.Log(LogType.Log, $"Loading url {url}");
             try
             {
                 if (url.StartsWith("//")) {
@@ -228,7 +229,7 @@ namespace WebAtoms
                 Execute(script, url);
             }
             catch (Exception ex) {
-                System.Diagnostics.Debug.WriteLine($"Failed to load url {url}\r\n{ex}");
+                AtomDevice.Instance.Log(LogType.Error, $"Failed to load url {url}\r\n{ex}");
                 throw;
             }
         }
@@ -244,10 +245,9 @@ namespace WebAtoms
                 else if (element is Page p) {
                     p.LoadFromXaml(content);
                 }
-                // (element as View).LoadFromXaml(content);
             }
             catch (Exception ex) {
-                System.Diagnostics.Debug.WriteLine(ex);
+                AtomDevice.Instance.Log(LogType.Error, ex.ToString());
                 throw;
             }
         }
@@ -382,7 +382,7 @@ namespace WebAtoms
                     };
                 }
                 catch (Exception ex) {
-                    System.Diagnostics.Debug.WriteLine(ex);
+                    AtomDevice.Instance.Log(LogType.Error, ex.ToString());
                     throw;
                 }
             }));
@@ -480,7 +480,7 @@ namespace WebAtoms
                         callback.Call(null);
                     }
                     catch (Exception ex) {
-                        System.Diagnostics.Debug.WriteLine(ex);
+                        AtomDevice.Instance.Log(LogType.Error, ex.ToString());
                         Engine.ThrowJSException(new JSException(Engine, ex.Message));
                     }
                 });
@@ -610,7 +610,7 @@ namespace WebAtoms
                 //}
             }
             catch (Exception ex) {
-                System.Diagnostics.Debug.WriteLine(ex);
+                AtomDevice.Instance.Log(LogType.Error, ex.ToString());
             }
         }
 
@@ -737,11 +737,11 @@ namespace WebAtoms
                 }
                 catch (JSException ex) {
                     var msg = $"Failed to load url {url}\r\n{ex.Stack()}\r\n{ex}";
-                    System.Diagnostics.Debug.WriteLine(msg);
+                    AtomDevice.Instance.Log(LogType.Error, msg);
                     error.Call(null, new Java.Lang.Object[] { msg });
                 } catch (Exception ex) {
                     var msg = $"Failed to load url {url}\r\n{ex}";
-                    System.Diagnostics.Debug.WriteLine(msg);
+                    AtomDevice.Instance.Log(LogType.Error, msg);
                     error.Call(null, new Java.Lang.Object[] { msg });
                 }
 

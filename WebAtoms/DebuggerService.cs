@@ -33,6 +33,23 @@ namespace WebAtoms
     public class DebuggerService
     {
 
+        public bool IsConnected;
+
+        public DebuggerService()
+        {
+            AtomDevice.Instance.LogEvent += OnLogEvent;
+        }
+
+        private void OnLogEvent(object sender, LogEvent e)
+        {
+            DebuggerMessage msg = new DebuggerMessage();
+            msg.Command = "console";
+            msg.Payload = JObject.FromObject(new {
+                type = e.LogType.ToString().ToLower(),
+                message = e.Text
+            });
+            SendMessage(msg);
+        }
 
         private ClientWebSocket clientWebSocket;
 
@@ -55,11 +72,11 @@ namespace WebAtoms
             var uri = new UriBuilder(nav.GetLocation());
             uri.Scheme = "ws";
             uri.Path = url;
-            AtomDevice.BeginInvokeOnMainThread(async () => {
+            AtomDevice.Instance.BeginInvokeOnMainThread(async () => {
             using (var t = NewCancellationToken()) {
 
                     await clientWebSocket.ConnectAsync(uri.Uri, t.Token);
-
+                    IsConnected = true;
                     await Task.Factory.StartNew(async () => await ReadMessagesAwait(clientWebSocket, t.Token));
                 }
             });
@@ -79,7 +96,11 @@ namespace WebAtoms
 
         public void SendMessage(DebuggerMessage message)
         {
-            AtomDevice.BeginInvokeOnMainThread(async () => {
+            AtomDevice.Instance.BeginInvokeOnMainThread(async () => {
+                if (!IsConnected)
+                {
+                    return;
+                }
                 var json = JsonConvert.SerializeObject(message);
                 var byteMessage = Encoding.UTF8.GetBytes(json);
                 var segment = new ArraySegment<byte>(byteMessage);
@@ -108,17 +129,18 @@ namespace WebAtoms
                 } while (true);
             }catch(Exception ex)
             {
-                AtomDevice.Log(ex);
+                AtomDevice.Instance.Log(LogType.Error, ex.ToString());
                 Disconnect();
             }
         }
 
         public void Disconnect()
         {
+            IsConnected = false;
             var c = this.clientWebSocket;
             if (c != null)
             {
-                AtomDevice.BeginInvokeOnMainThread(async () =>
+                AtomDevice.Instance.BeginInvokeOnMainThread(async () =>
                 {
                     using (var ct = new System.Threading.CancellationTokenSource())
                     {

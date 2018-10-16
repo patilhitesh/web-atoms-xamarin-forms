@@ -6,10 +6,28 @@ using Xamarin.Forms;
 
 namespace WebAtoms
 {
+    public enum LogType
+    {
+        Log,
+        Warning,
+        Error
+    }
+
+    public class LogEvent: EventArgs
+    {
+        public string Text { get; set; }
+
+        public LogType LogType { get; set; }
+    }
+
     public class AtomDevice
     {
 
-        public static void BeginInvokeOnMainThread(params Func<Task>[] funcs)
+        public static AtomDevice Instance = new AtomDevice();
+
+        public event EventHandler<LogEvent> LogEvent;
+
+        public void BeginInvokeOnMainThread(params Func<Task>[] funcs)
         {
             Device.BeginInvokeOnMainThread(async () => {
                 foreach (var f in funcs)
@@ -20,15 +38,16 @@ namespace WebAtoms
                     }
                     catch (Exception ex)
                     {
-                        Log(ex);
+                        Log(LogType.Error, ex.ToString());
                     }
                 }
             });
         }
 
-        public static Action<object> Log = (m) => {
-            System.Diagnostics.Debug.WriteLine(m);
-        };
+        public void Log(LogType type, string text)
+        {
+            LogEvent?.Invoke(this, new WebAtoms.LogEvent { LogType = type, Text = text });
+        }
 
     }
 }
