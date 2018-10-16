@@ -23,6 +23,16 @@ namespace WebAtoms
     public class AtomDevice
     {
 
+        public AtomDevice()
+        {
+            LogEvent += AtomDevice_LogEvent;
+        }
+
+        private void AtomDevice_LogEvent(object sender, LogEvent e)
+        {
+            System.Diagnostics.Debug.WriteLine(e.Text);
+        }
+
         public static AtomDevice Instance = new AtomDevice();
 
         public event EventHandler<LogEvent> LogEvent;
