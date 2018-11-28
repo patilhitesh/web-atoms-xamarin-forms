@@ -11,6 +11,7 @@
   <ItemGroup>
     <Compile Include="$(MSBuildThisFileDirectory)AtomCommand.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AtomDevice.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)AtomImage.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)AtomToolbarItem.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)BusyPopup.cs" />
     <Compile Include="$(MSBuildThisFileDirectory)DebuggerService.cs" />

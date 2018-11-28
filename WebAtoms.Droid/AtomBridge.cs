@@ -50,12 +50,17 @@ namespace WebAtoms
     }
 
 
-    public class AtomBridge: IJSService
+    public class AtomBridge : IJSService
     {
+
+        static AtomBridge() {
+            DependencyService.Register<IWebClient, AppOkHttpClient>();
+        }
 
         public JSContext Engine { get; }
 
-        public static HttpClient Client { get; } = (new AppOkHttpClient()).Client;
+        private static HttpClient _Client;
+        public static HttpClient Client => _Client ?? (_Client = DependencyService.Get<IWebClient>().Client);
 
         private static List<(string, IJSService)> registrations = new List<(string, IJSService)>() {
             ("preferences", DependencyService.Get<PreferenceService>()),
