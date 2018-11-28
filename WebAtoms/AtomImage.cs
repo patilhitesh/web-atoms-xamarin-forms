@@ -70,6 +70,7 @@ namespace WebAtoms
                     return s;
                 }
                 catch (TaskCanceledException) {
+                    return null;
                 }
                 catch (Exception ex)
                 {
